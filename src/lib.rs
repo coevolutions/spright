@@ -1,6 +1,6 @@
 pub mod texture;
 
-use wgpu::{util::DeviceExt as _, Texture};
+use wgpu::util::DeviceExt as _;
 
 #[derive(Debug, Clone)]
 pub struct Rect {
@@ -171,7 +171,7 @@ impl Renderer {
         &self,
         device: &wgpu::Device,
         screen_size: [f32; 2],
-        texture: &Texture,
+        texture: &wgpu::Texture,
         sprites: &[Sprite],
     ) -> PerFrameData {
         let texture_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
