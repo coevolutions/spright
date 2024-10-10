@@ -1,5 +1,8 @@
+//! Texture helpers.
+
 use image::GenericImageView as _;
 
+/// Loads a texture from an image.
 pub fn load(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
