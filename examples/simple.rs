@@ -37,17 +37,23 @@ impl Graphics {
 
 struct Inner {
     spright_renderer: Renderer,
-    texture: wgpu::Texture,
+    texture1: wgpu::Texture,
+    texture2: wgpu::Texture,
 }
 
 impl Inner {
     fn new(device: &Device, queue: &Queue, texture_format: TextureFormat) -> Self {
         Self {
             spright_renderer: Renderer::new(device, texture_format),
-            texture: spright::texture::load(
+            texture1: spright::texture::load(
                 device,
                 queue,
                 &image::load_from_memory(include_bytes!("test.png")).unwrap(),
+            ),
+            texture2: spright::texture::load(
+                device,
+                queue,
+                &image::load_from_memory(include_bytes!("test2.png")).unwrap(),
             ),
         }
     }
@@ -60,35 +66,73 @@ impl Inner {
         self.spright_renderer.prepare(
             device,
             [screen_size.width as f32, screen_size.height as f32],
-            &self.texture,
             &[
-                spright::Sprite {
-                    src: spright::Rect {
-                        x: 0.0,
-                        y: 0.0,
-                        width: 280.0 / 2.0,
-                        height: 210.0 / 2.0,
-                    },
-                    dest: spright::Rect {
-                        x: -20.0,
-                        y: -20.0,
-                        width: 280.0 * 4.0,
-                        height: 210.0 * 4.0,
-                    },
+                spright::Group {
+                    texture: &self.texture1,
+                    sprites: &[
+                        spright::Sprite {
+                            src: spright::Rect {
+                                x: 0.0,
+                                y: 0.0,
+                                width: 280.0 / 2.0,
+                                height: 210.0 / 2.0,
+                            },
+                            dest: spright::Rect {
+                                x: -20.0,
+                                y: -20.0,
+                                width: 280.0 * 4.0,
+                                height: 210.0 * 4.0,
+                            },
+                        },
+                        spright::Sprite {
+                            src: spright::Rect {
+                                x: 0.0,
+                                y: 0.0,
+                                width: 280.0,
+                                height: 210.0,
+                            },
+                            dest: spright::Rect {
+                                x: 20.0,
+                                y: 20.0,
+                                width: 280.0,
+                                height: 210.0,
+                            },
+                        },
+                    ],
                 },
-                spright::Sprite {
-                    src: spright::Rect {
-                        x: 0.0,
-                        y: 0.0,
-                        width: 280.0,
-                        height: 210.0,
-                    },
-                    dest: spright::Rect {
-                        x: 20.0,
-                        y: 20.0,
-                        width: 280.0,
-                        height: 210.0,
-                    },
+                spright::Group {
+                    texture: &self.texture2,
+                    sprites: &[spright::Sprite {
+                        src: spright::Rect {
+                            x: 0.0,
+                            y: 0.0,
+                            width: 386.0,
+                            height: 395.0,
+                        },
+                        dest: spright::Rect {
+                            x: 30.0,
+                            y: 30.0,
+                            width: 386.0 * 4.0,
+                            height: 395.0 * 4.0,
+                        },
+                    }],
+                },
+                spright::Group {
+                    texture: &self.texture1,
+                    sprites: &[spright::Sprite {
+                        src: spright::Rect {
+                            x: 0.0,
+                            y: 0.0,
+                            width: 280.0,
+                            height: 210.0,
+                        },
+                        dest: spright::Rect {
+                            x: 300.0,
+                            y: 300.0,
+                            width: 280.0,
+                            height: 210.0,
+                        },
+                    }],
                 },
             ],
         )
