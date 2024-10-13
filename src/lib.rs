@@ -107,8 +107,8 @@ struct Vertex {
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 struct TextureUniforms {
     size: [f32; 2],
-    _padding: u32,
     is_mask: u32,
+    _padding: u32,
 }
 
 #[repr(C)]
