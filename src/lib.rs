@@ -74,7 +74,11 @@ pub struct Renderer {
     screen_size_uniform_bind_group: wgpu::BindGroup,
     screen_size_uniform_buffer: wgpu::Buffer,
     sampler: wgpu::Sampler,
-    prepared: Vec<PreparedGroup>,
+}
+
+/// Contains prepared data for rendering.
+pub struct Prepared {
+    groups: Vec<PreparedGroup>,
 }
 
 #[repr(C)]
@@ -222,7 +226,6 @@ impl Renderer {
                 mipmap_filter: wgpu::FilterMode::Nearest,
                 ..Default::default()
             }),
-            prepared: vec![],
         }
     }
 
@@ -339,17 +342,19 @@ impl Renderer {
     }
 
     /// Prepares sprites for rendering.
-    pub fn prepare(&mut self, device: &wgpu::Device, groups: &[Group]) {
-        self.prepared = groups
-            .iter()
-            .map(|g| self.prepare_one(device, g.texture, &g.sprites))
-            .collect::<Vec<_>>();
+    pub fn prepare(&self, device: &wgpu::Device, groups: &[Group]) -> Prepared {
+        Prepared {
+            groups: groups
+                .iter()
+                .map(|g| self.prepare_one(device, g.texture, &g.sprites))
+                .collect::<Vec<_>>(),
+        }
     }
 
     /// Renders prepared sprites.
-    pub fn render<'rpass>(&'rpass self, rpass: &mut wgpu::RenderPass<'rpass>) {
+    pub fn render<'rpass>(&'rpass self, rpass: &mut wgpu::RenderPass<'rpass>, prepared: &Prepared) {
         rpass.set_pipeline(&self.render_pipeline);
-        for g in self.prepared.iter() {
+        for g in prepared.groups.iter() {
             rpass.set_vertex_buffer(0, g.vertex_buffer.slice(..));
             rpass.set_index_buffer(g.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
             rpass.set_bind_group(0, &g.texture_bind_group, &[]);

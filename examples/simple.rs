@@ -13,6 +13,10 @@ use winit::{
     window::Window,
 };
 
+struct Prepared {
+    spright: spright::Prepared,
+}
+
 enum UserEvent {
     Graphics(Graphics),
 }
@@ -69,29 +73,67 @@ impl Inner {
             .resize(queue, [screen_size.width as f32, screen_size.height as f32]);
     }
 
-    pub fn prepare(&mut self, device: &Device) {
-        self.spright_renderer.prepare(
-            device,
-            &[
-                spright::Group {
-                    texture: &self.texture1,
-                    sprites: &[
-                        spright::Sprite {
+    pub fn prepare(&self, device: &Device) -> Prepared {
+        Prepared {
+            spright: self.spright_renderer.prepare(
+                device,
+                &[
+                    spright::Group {
+                        texture: &self.texture1,
+                        sprites: &[
+                            spright::Sprite {
+                                src: spright::Rect {
+                                    x: 0.0,
+                                    y: 0.0,
+                                    width: 280.0 / 2.0,
+                                    height: 210.0 / 2.0,
+                                },
+                                dest: spright::Rect {
+                                    x: -20.0,
+                                    y: -20.0,
+                                    width: 280.0 * 4.0,
+                                    height: 210.0 * 4.0,
+                                },
+                                tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
+                            },
+                            spright::Sprite {
+                                src: spright::Rect {
+                                    x: 0.0,
+                                    y: 0.0,
+                                    width: 280.0,
+                                    height: 210.0,
+                                },
+                                dest: spright::Rect {
+                                    x: 20.0,
+                                    y: 20.0,
+                                    width: 280.0,
+                                    height: 210.0,
+                                },
+                                tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
+                            },
+                        ],
+                    },
+                    spright::Group {
+                        texture: &self.texture2,
+                        sprites: &[spright::Sprite {
                             src: spright::Rect {
                                 x: 0.0,
                                 y: 0.0,
-                                width: 280.0 / 2.0,
-                                height: 210.0 / 2.0,
+                                width: 386.0,
+                                height: 395.0,
                             },
                             dest: spright::Rect {
-                                x: -20.0,
-                                y: -20.0,
-                                width: 280.0 * 4.0,
-                                height: 210.0 * 4.0,
+                                x: 30.0,
+                                y: 30.0,
+                                width: 386.0 * 4.0,
+                                height: 395.0 * 4.0,
                             },
                             tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
-                        },
-                        spright::Sprite {
+                        }],
+                    },
+                    spright::Group {
+                        texture: &self.texture1,
+                        sprites: &[spright::Sprite {
                             src: spright::Rect {
                                 x: 0.0,
                                 y: 0.0,
@@ -99,57 +141,21 @@ impl Inner {
                                 height: 210.0,
                             },
                             dest: spright::Rect {
-                                x: 20.0,
-                                y: 20.0,
+                                x: 300.0,
+                                y: 300.0,
                                 width: 280.0,
                                 height: 210.0,
                             },
-                            tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
-                        },
-                    ],
-                },
-                spright::Group {
-                    texture: &self.texture2,
-                    sprites: &[spright::Sprite {
-                        src: spright::Rect {
-                            x: 0.0,
-                            y: 0.0,
-                            width: 386.0,
-                            height: 395.0,
-                        },
-                        dest: spright::Rect {
-                            x: 30.0,
-                            y: 30.0,
-                            width: 386.0 * 4.0,
-                            height: 395.0 * 4.0,
-                        },
-                        tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
-                    }],
-                },
-                spright::Group {
-                    texture: &self.texture1,
-                    sprites: &[spright::Sprite {
-                        src: spright::Rect {
-                            x: 0.0,
-                            y: 0.0,
-                            width: 280.0,
-                            height: 210.0,
-                        },
-                        dest: spright::Rect {
-                            x: 300.0,
-                            y: 300.0,
-                            width: 280.0,
-                            height: 210.0,
-                        },
-                        tint: spright::Color::new(0xff, 0xff, 0x00, 0x88),
-                    }],
-                },
-            ],
-        )
+                            tint: spright::Color::new(0xff, 0xff, 0x00, 0x88),
+                        }],
+                    },
+                ],
+            ),
+        }
     }
 
-    pub fn render<'rpass>(&'rpass self, rpass: &mut RenderPass<'rpass>) {
-        self.spright_renderer.render(rpass);
+    pub fn render<'rpass>(&'rpass self, rpass: &mut RenderPass<'rpass>, prepared: &Prepared) {
+        self.spright_renderer.render(rpass, &prepared.spright);
     }
 }
 
@@ -265,7 +271,7 @@ impl ApplicationHandler<UserEvent> for Application {
                     .device
                     .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
-                inner.prepare(&gfx.device);
+                let prepared = inner.prepare(&gfx.device);
                 {
                     let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                         color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -278,7 +284,7 @@ impl ApplicationHandler<UserEvent> for Application {
                         })],
                         ..Default::default()
                     });
-                    inner.render(&mut rpass);
+                    inner.render(&mut rpass, &prepared);
                 }
 
                 gfx.queue.submit(Some(encoder.finish()));
