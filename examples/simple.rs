@@ -80,6 +80,7 @@ impl Inner {
                 &[
                     spright::Group {
                         texture: &self.texture1,
+                        kind: spright::TextureKind::Color,
                         sprites: &[
                             spright::Sprite {
                                 src: spright::Rect {
@@ -115,6 +116,7 @@ impl Inner {
                     },
                     spright::Group {
                         texture: &self.texture2,
+                        kind: spright::TextureKind::Color,
                         sprites: &[spright::Sprite {
                             src: spright::Rect {
                                 x: 0.0,
@@ -133,6 +135,7 @@ impl Inner {
                     },
                     spright::Group {
                         texture: &self.texture1,
+                        kind: spright::TextureKind::Color,
                         sprites: &[spright::Sprite {
                             src: spright::Rect {
                                 x: 0.0,
