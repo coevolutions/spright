@@ -2,6 +2,8 @@ pub mod texture;
 
 use wgpu::util::DeviceExt as _;
 
+pub type Color = rgb::RGBA8;
+
 /// Represents a rectangle.
 #[derive(Debug, Clone)]
 pub struct Rect {
@@ -53,6 +55,9 @@ pub struct Sprite {
 
     /// Destination rectangle to draw to.
     pub dest: Rect,
+
+    /// Tint.
+    pub tint: Color,
 }
 
 struct PreparedGroup {
@@ -79,6 +84,7 @@ pub struct Renderer {
 struct Vertex {
     position: [f32; 3],
     tex_coords: [f32; 2],
+    tint: [f32; 4],
 }
 
 #[repr(C)]
@@ -93,7 +99,7 @@ impl Vertex {
     const BUFFER_LAYOUT: wgpu::VertexBufferLayout<'static> = wgpu::VertexBufferLayout {
         array_stride: std::mem::size_of::<Self>() as wgpu::BufferAddress,
         step_mode: wgpu::VertexStepMode::Vertex,
-        attributes: &wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x2],
+        attributes: &wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x2, 2 => Float32x4],
     };
 }
 
@@ -287,22 +293,33 @@ impl Renderer {
                 &sprites
                     .iter()
                     .flat_map(|s| {
+                        let tint = [
+                            s.tint.r as f32 / 255.0,
+                            s.tint.g as f32 / 255.0,
+                            s.tint.b as f32 / 255.0,
+                            s.tint.a as f32 / 255.0,
+                        ];
+
                         [
                             Vertex {
                                 position: [s.dest.left(), s.dest.top(), 0.0],
                                 tex_coords: [s.src.left(), s.src.top()],
+                                tint,
                             },
                             Vertex {
                                 position: [s.dest.left(), s.dest.bottom(), 0.0],
                                 tex_coords: [s.src.left(), s.src.bottom()],
+                                tint,
                             },
                             Vertex {
                                 position: [s.dest.right(), s.dest.top(), 0.0],
                                 tex_coords: [s.src.right(), s.src.top()],
+                                tint,
                             },
                             Vertex {
                                 position: [s.dest.right(), s.dest.bottom(), 0.0],
                                 tex_coords: [s.src.right(), s.src.bottom()],
+                                tint,
                             },
                         ]
                     })

@@ -89,6 +89,7 @@ impl Inner {
                                 width: 280.0 * 4.0,
                                 height: 210.0 * 4.0,
                             },
+                            tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
                         },
                         spright::Sprite {
                             src: spright::Rect {
@@ -103,6 +104,7 @@ impl Inner {
                                 width: 280.0,
                                 height: 210.0,
                             },
+                            tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
                         },
                     ],
                 },
@@ -121,6 +123,7 @@ impl Inner {
                             width: 386.0 * 4.0,
                             height: 395.0 * 4.0,
                         },
+                        tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
                     }],
                 },
                 spright::Group {
@@ -138,6 +141,7 @@ impl Inner {
                             width: 280.0,
                             height: 210.0,
                         },
+                        tint: spright::Color::new(0xff, 0xff, 0x00, 0x88),
                     }],
                 },
             ],
