@@ -62,7 +62,6 @@ pub struct Sprite {
 
 struct PreparedGroup {
     texture_bind_group: wgpu::BindGroup,
-    texture_size_uniform_bind_group: wgpu::BindGroup,
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
     num_indices: u32,
@@ -72,7 +71,6 @@ struct PreparedGroup {
 pub struct Renderer {
     render_pipeline: wgpu::RenderPipeline,
     texture_bind_group_layout: wgpu::BindGroupLayout,
-    texture_size_uniform_bind_group_layout: wgpu::BindGroupLayout,
     screen_size_uniform_bind_group: wgpu::BindGroup,
     screen_size_uniform_buffer: wgpu::Buffer,
     sampler: wgpu::Sampler,
@@ -89,7 +87,9 @@ struct Vertex {
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
-struct TextureSizeUniform([f32; 2]);
+struct TextureUniforms {
+    size: [f32; 2],
+}
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
@@ -138,22 +138,17 @@ impl Renderer {
                         ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
                         count: None,
                     },
-                ],
-            });
-
-        let texture_size_uniform_bind_group_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                label: Some("spright: texture_size_uniform_bind_group_layout"),
-                entries: &[wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::VERTEX,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 2,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
                     },
-                    count: None,
-                }],
+                ],
             });
 
         let screen_size_uniform_bind_group_layout =
@@ -189,7 +184,6 @@ impl Renderer {
                         label: Some("spright: render_pipeline.layout"),
                         bind_group_layouts: &[
                             &texture_bind_group_layout,
-                            &texture_size_uniform_bind_group_layout,
                             &screen_size_uniform_bind_group_layout,
                         ],
                         push_constant_ranges: &[],
@@ -217,7 +211,6 @@ impl Renderer {
                 multiview: None,
             }),
             texture_bind_group_layout,
-            texture_size_uniform_bind_group_layout,
             screen_size_uniform_bind_group,
             screen_size_uniform_buffer,
             sampler: device.create_sampler(&wgpu::SamplerDescriptor {
@@ -248,6 +241,17 @@ impl Renderer {
         texture: &wgpu::Texture,
         sprites: &[Sprite],
     ) -> PreparedGroup {
+        let wgpu::Extent3d { width, height, .. } = texture.size();
+
+        let texture_uniforms_buffer =
+            device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("spright: texture_uniforms_buffer"),
+                contents: bytemuck::cast_slice(&[TextureUniforms {
+                    size: [width as f32, height as f32],
+                }]),
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            });
+
         let texture_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("spright: texture_bind_group"),
             layout: &self.texture_bind_group_layout,
@@ -262,30 +266,12 @@ impl Renderer {
                     binding: 1,
                     resource: wgpu::BindingResource::Sampler(&self.sampler),
                 },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: texture_uniforms_buffer.as_entire_binding(),
+                },
             ],
         });
-
-        let wgpu::Extent3d { width, height, .. } = texture.size();
-
-        let texture_size_uniform_buffer =
-            device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("spright: texture_size_uniform_buffer"),
-                contents: bytemuck::cast_slice(&[TextureSizeUniform([
-                    width as f32,
-                    height as f32,
-                ])]),
-                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-            });
-
-        let texture_size_uniform_bind_group =
-            device.create_bind_group(&wgpu::BindGroupDescriptor {
-                label: Some("spright: texture_size_uniform_bind_group"),
-                layout: &self.texture_size_uniform_bind_group_layout,
-                entries: &[wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: texture_size_uniform_buffer.as_entire_binding(),
-                }],
-            });
 
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("spright: vertex_buffer"),
@@ -346,7 +332,6 @@ impl Renderer {
 
         PreparedGroup {
             texture_bind_group,
-            texture_size_uniform_bind_group,
             vertex_buffer,
             index_buffer,
             num_indices: indices.len() as u32,
@@ -369,7 +354,6 @@ impl Renderer {
             rpass.set_index_buffer(g.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
             rpass.set_bind_group(0, &g.texture_bind_group, &[]);
             rpass.set_bind_group(1, &self.screen_size_uniform_bind_group, &[]);
-            rpass.set_bind_group(2, &g.texture_size_uniform_bind_group, &[]);
             rpass.draw_indexed(0..g.num_indices, 0, 0..1);
         }
     }
