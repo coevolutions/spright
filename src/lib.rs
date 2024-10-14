@@ -1,4 +1,7 @@
 pub mod texture;
+mod transform;
+
+pub use transform::AffineTransform;
 
 use wgpu::util::DeviceExt as _;
 
@@ -11,6 +14,15 @@ pub struct Rect {
     pub x: f32,
     /// y coordinate of top-left corner.
     pub y: f32,
+    /// Width.
+    pub width: f32,
+    /// Height.
+    pub height: f32,
+}
+
+/// Represents a size.
+#[derive(Debug, Clone)]
+pub struct Size {
     /// Width.
     pub width: f32,
     /// Height.
@@ -55,7 +67,7 @@ pub struct Group<'a> {
     pub texture: &'a wgpu::Texture,
 
     /// What the kind of texture is (color or mask).
-    pub kind: TextureKind,
+    pub texture_kind: TextureKind,
 
     /// The sprites to draw.
     pub sprites: &'a [Sprite],
@@ -67,8 +79,11 @@ pub struct Sprite {
     /// Source rectangle from the texture to draw from.
     pub src: Rect,
 
-    /// Destination rectangle to draw to.
-    pub dest: Rect,
+    /// Size of the destination.
+    pub dest_size: Size,
+
+    /// Transformation of the source rectangle into screen space.
+    pub transform: AffineTransform,
 
     /// Tint.
     pub tint: Color,
@@ -254,14 +269,8 @@ impl Renderer {
         );
     }
 
-    fn prepare_one(
-        &self,
-        device: &wgpu::Device,
-        texture: &wgpu::Texture,
-        texture_kind: TextureKind,
-        sprites: &[Sprite],
-    ) -> PreparedGroup {
-        let wgpu::Extent3d { width, height, .. } = texture.size();
+    fn prepare_one(&self, device: &wgpu::Device, g: &Group) -> PreparedGroup {
+        let wgpu::Extent3d { width, height, .. } = g.texture.size();
 
         let texture_uniforms_buffer =
             device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -269,7 +278,7 @@ impl Renderer {
                 contents: bytemuck::cast_slice(&[TextureUniforms {
                     size: [width as f32, height as f32],
                     _padding: 0,
-                    is_mask: match texture_kind {
+                    is_mask: match g.texture_kind {
                         TextureKind::Color => 0,
                         TextureKind::Mask => 1,
                     },
@@ -284,7 +293,8 @@ impl Renderer {
                 wgpu::BindGroupEntry {
                     binding: 0,
                     resource: wgpu::BindingResource::TextureView(
-                        &texture.create_view(&wgpu::TextureViewDescriptor::default()),
+                        &g.texture
+                            .create_view(&wgpu::TextureViewDescriptor::default()),
                     ),
                 },
                 wgpu::BindGroupEntry {
@@ -301,7 +311,7 @@ impl Renderer {
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("spright: vertex_buffer"),
             contents: bytemuck::cast_slice(
-                &sprites
+                &g.sprites
                     .iter()
                     .flat_map(|s| {
                         let tint = [
@@ -311,24 +321,29 @@ impl Renderer {
                             s.tint.a as f32 / 255.0,
                         ];
 
+                        let (x0, y0) = s.transform.transform(0.0, 0.0);
+                        let (x1, y1) = s.transform.transform(0.0, s.dest_size.height);
+                        let (x2, y2) = s.transform.transform(s.dest_size.width, 0.0);
+                        let (x3, y3) = s.transform.transform(s.dest_size.width, s.dest_size.height);
+
                         [
                             Vertex {
-                                position: [s.dest.left(), s.dest.top(), 0.0],
+                                position: [x0, y0, 0.0],
                                 tex_coords: [s.src.left(), s.src.top()],
                                 tint,
                             },
                             Vertex {
-                                position: [s.dest.left(), s.dest.bottom(), 0.0],
+                                position: [x1, y1, 0.0],
                                 tex_coords: [s.src.left(), s.src.bottom()],
                                 tint,
                             },
                             Vertex {
-                                position: [s.dest.right(), s.dest.top(), 0.0],
+                                position: [x2, y2, 0.0],
                                 tex_coords: [s.src.right(), s.src.top()],
                                 tint,
                             },
                             Vertex {
-                                position: [s.dest.right(), s.dest.bottom(), 0.0],
+                                position: [x3, y3, 0.0],
                                 tex_coords: [s.src.right(), s.src.bottom()],
                                 tint,
                             },
@@ -339,7 +354,7 @@ impl Renderer {
             usage: wgpu::BufferUsages::VERTEX,
         });
 
-        let indices = (0..sprites.len() as u16)
+        let indices = (0..g.sprites.len() as u16)
             .flat_map(|i| {
                 [
                     0, 1, 2, //
@@ -368,7 +383,7 @@ impl Renderer {
         Prepared {
             groups: groups
                 .iter()
-                .map(|g| self.prepare_one(device, g.texture, g.kind, &g.sprites))
+                .map(|g| self.prepare_one(device, g))
                 .collect::<Vec<_>>(),
         }
     }
