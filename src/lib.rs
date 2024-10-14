@@ -376,11 +376,11 @@ impl Renderer {
     /// Renders prepared sprites.
     pub fn render<'rpass>(&'rpass self, rpass: &mut wgpu::RenderPass<'rpass>, prepared: &Prepared) {
         rpass.set_pipeline(&self.render_pipeline);
+        rpass.set_bind_group(1, &self.screen_size_uniform_bind_group, &[]);
         for g in prepared.groups.iter() {
             rpass.set_vertex_buffer(0, g.vertex_buffer.slice(..));
             rpass.set_index_buffer(g.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
             rpass.set_bind_group(0, &g.texture_bind_group, &[]);
-            rpass.set_bind_group(1, &self.screen_size_uniform_bind_group, &[]);
             rpass.draw_indexed(0..g.num_indices, 0, 0..1);
         }
     }
