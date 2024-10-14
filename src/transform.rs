@@ -1,7 +1,7 @@
 /// A 3x2 transformation matrix representing an affine transform.
 ///
 /// In other words, it is a 2x2 transformation matrix with a translation component, or a 3x3 homogenous transform matrix.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct AffineTransform([f32; 6]);
 
 impl AffineTransform {
@@ -127,6 +127,11 @@ impl AffineTransform {
             [self.0[4], self.0[5], 1.0, 0.0],
             [0.0, 0.0, 0.0, 1.0],
         ]
+    }
+
+    /// Returns the underlying array in column-major order.
+    pub const fn as_array(&self) -> &[f32; 6] {
+        &self.0
     }
 }
 

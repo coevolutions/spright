@@ -20,15 +20,6 @@ pub struct Rect {
     pub height: f32,
 }
 
-/// Represents a size.
-#[derive(Debug, Clone)]
-pub struct Size {
-    /// Width.
-    pub width: f32,
-    /// Height.
-    pub height: f32,
-}
-
 impl Rect {
     /// Gets the x coordinate of top-left corner.
     pub const fn left(&self) -> f32 {
@@ -69,6 +60,9 @@ pub struct Group<'a> {
     /// What the kind of texture is (color or mask).
     pub texture_kind: TextureKind,
 
+    /// Transformation of the source rectangle into screen space.
+    pub transform: AffineTransform,
+
     /// The sprites to draw.
     pub sprites: &'a [Sprite],
 }
@@ -80,10 +74,7 @@ pub struct Sprite {
     pub src: Rect,
 
     /// Size of the destination.
-    pub dest_size: Size,
-
-    /// Transformation of the source rectangle into screen space.
-    pub transform: AffineTransform,
+    pub dest: Rect,
 
     /// Tint.
     pub tint: Color,
@@ -120,10 +111,11 @@ struct Vertex {
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
-struct TextureUniforms {
-    size: [f32; 2],
-    is_mask: u32,
+struct GroupUniforms {
+    texture_size: [f32; 2],
+    texture_is_mask: u32,
     _padding: u32,
+    transform: [[f32; 4]; 4],
 }
 
 #[repr(C)]
@@ -148,7 +140,7 @@ impl Renderer {
         let screen_size_uniform_buffer =
             device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: Some("spright: screen_size_uniform_buffer"),
-                contents: bytemuck::cast_slice(&[ScreenSizeUniform(screen_size)]),
+                contents: bytemuck::bytes_of(&ScreenSizeUniform(screen_size)),
                 usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             });
 
@@ -175,7 +167,7 @@ impl Renderer {
                     },
                     wgpu::BindGroupLayoutEntry {
                         binding: 2,
-                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
                         ty: wgpu::BindingType::Buffer {
                             ty: wgpu::BufferBindingType::Uniform,
                             has_dynamic_offset: false,
@@ -265,26 +257,26 @@ impl Renderer {
         queue.write_buffer(
             &self.screen_size_uniform_buffer,
             0,
-            bytemuck::cast_slice(&[ScreenSizeUniform(size)]),
+            bytemuck::bytes_of(&ScreenSizeUniform(size)),
         );
     }
 
     fn prepare_one(&self, device: &wgpu::Device, g: &Group) -> PreparedGroup {
         let wgpu::Extent3d { width, height, .. } = g.texture.size();
 
-        let texture_uniforms_buffer =
-            device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("spright: texture_uniforms_buffer"),
-                contents: bytemuck::cast_slice(&[TextureUniforms {
-                    size: [width as f32, height as f32],
-                    _padding: 0,
-                    is_mask: match g.texture_kind {
-                        TextureKind::Color => 0,
-                        TextureKind::Mask => 1,
-                    },
-                }]),
-                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-            });
+        let group_uniforms_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("spright: group_uniforms_buffer"),
+            contents: bytemuck::bytes_of(&GroupUniforms {
+                texture_size: [width as f32, height as f32],
+                texture_is_mask: match g.texture_kind {
+                    TextureKind::Color => 0,
+                    TextureKind::Mask => 1,
+                },
+                transform: g.transform.to_mat4x4(),
+                _padding: 0,
+            }),
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        });
 
         let texture_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("spright: texture_bind_group"),
@@ -303,7 +295,7 @@ impl Renderer {
                 },
                 wgpu::BindGroupEntry {
                     binding: 2,
-                    resource: texture_uniforms_buffer.as_entire_binding(),
+                    resource: group_uniforms_buffer.as_entire_binding(),
                 },
             ],
         });
@@ -321,29 +313,24 @@ impl Renderer {
                             s.tint.a as f32 / 255.0,
                         ];
 
-                        let (x0, y0) = s.transform.transform(0.0, 0.0);
-                        let (x1, y1) = s.transform.transform(0.0, s.dest_size.height);
-                        let (x2, y2) = s.transform.transform(s.dest_size.width, 0.0);
-                        let (x3, y3) = s.transform.transform(s.dest_size.width, s.dest_size.height);
-
                         [
                             Vertex {
-                                position: [x0, y0, 0.0],
+                                position: [s.dest.left(), s.dest.top(), 0.0],
                                 tex_coords: [s.src.left(), s.src.top()],
                                 tint,
                             },
                             Vertex {
-                                position: [x1, y1, 0.0],
+                                position: [s.dest.left(), s.dest.bottom(), 0.0],
                                 tex_coords: [s.src.left(), s.src.bottom()],
                                 tint,
                             },
                             Vertex {
-                                position: [x2, y2, 0.0],
+                                position: [s.dest.right(), s.dest.top(), 0.0],
                                 tex_coords: [s.src.right(), s.src.top()],
                                 tint,
                             },
                             Vertex {
-                                position: [x3, y3, 0.0],
+                                position: [s.dest.right(), s.dest.bottom(), 0.0],
                                 tex_coords: [s.src.right(), s.src.bottom()],
                                 tint,
                             },
