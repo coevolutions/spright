@@ -3,7 +3,7 @@ use std::sync::Arc;
 use spright::Renderer;
 use wgpu::{
     Adapter, CreateSurfaceError, Device, DeviceDescriptor, PresentMode, Queue, RenderPass, Surface,
-    SurfaceConfiguration, TextureFormat,
+    SurfaceConfiguration,
 };
 use winit::{
     application::ApplicationHandler,
@@ -42,30 +42,36 @@ struct Inner {
 }
 
 impl Inner {
-    fn new(device: &Device, queue: &Queue, texture_format: TextureFormat) -> Self {
+    fn new(gfx: &Graphics) -> Self {
+        let [w, h]: [u32; 2] = gfx.window.inner_size().into();
+        let spright_renderer = Renderer::new(
+            &gfx.device,
+            gfx.surface.get_capabilities(&gfx.adapter).formats[0],
+            [w as f32, h as f32],
+        );
         Self {
-            spright_renderer: Renderer::new(device, texture_format),
+            spright_renderer,
             texture1: spright::texture::load(
-                device,
-                queue,
+                &gfx.device,
+                &gfx.queue,
                 &image::load_from_memory(include_bytes!("test.png")).unwrap(),
             ),
             texture2: spright::texture::load(
-                device,
-                queue,
+                &gfx.device,
+                &gfx.queue,
                 &image::load_from_memory(include_bytes!("test2.png")).unwrap(),
             ),
         }
     }
 
-    pub fn prepare(
-        &self,
-        device: &Device,
-        screen_size: winit::dpi::PhysicalSize<u32>,
-    ) -> spright::PerFrameData {
+    pub fn resize(&mut self, queue: &Queue, screen_size: winit::dpi::PhysicalSize<u32>) {
+        self.spright_renderer
+            .resize(queue, [screen_size.width as f32, screen_size.height as f32]);
+    }
+
+    pub fn prepare(&mut self, device: &Device) {
         self.spright_renderer.prepare(
             device,
-            [screen_size.width as f32, screen_size.height as f32],
             &[
                 spright::Group {
                     texture: &self.texture1,
@@ -138,12 +144,8 @@ impl Inner {
         )
     }
 
-    pub fn render<'rpass>(
-        &'rpass self,
-        rpass: &mut RenderPass<'rpass>,
-        per_frame_data: &'rpass spright::PerFrameData,
-    ) {
-        self.spright_renderer.render(rpass, per_frame_data);
+    pub fn render<'rpass>(&'rpass self, rpass: &mut RenderPass<'rpass>) {
+        self.spright_renderer.render(rpass);
     }
 }
 
@@ -232,8 +234,12 @@ impl ApplicationHandler<UserEvent> for Application {
                 let Some(gfx) = &mut self.gfx else {
                     return;
                 };
-
                 gfx.resize(new_size);
+
+                let Some(inner) = &mut self.inner else {
+                    return;
+                };
+                inner.resize(&gfx.queue, new_size);
             }
             WindowEvent::RedrawRequested => {
                 let Some(gfx) = &mut self.gfx else {
@@ -255,7 +261,7 @@ impl ApplicationHandler<UserEvent> for Application {
                     .device
                     .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
-                let pfd = inner.prepare(&gfx.device, gfx.window.inner_size());
+                inner.prepare(&gfx.device);
                 {
                     let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                         color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -268,7 +274,7 @@ impl ApplicationHandler<UserEvent> for Application {
                         })],
                         ..Default::default()
                     });
-                    inner.render(&mut rpass, &pfd);
+                    inner.render(&mut rpass);
                 }
 
                 gfx.queue.submit(Some(encoder.finish()));
@@ -283,11 +289,8 @@ impl ApplicationHandler<UserEvent> for Application {
         match event {
             UserEvent::Graphics(mut gfx) => {
                 gfx.resize(gfx.window.inner_size());
-                self.inner = Some(Inner::new(
-                    &gfx.device,
-                    &gfx.queue,
-                    gfx.surface.get_capabilities(&gfx.adapter).formats[0],
-                ));
+                let inner = Inner::new(&gfx);
+                self.inner = Some(inner);
                 self.gfx = Some(gfx);
             }
         }
