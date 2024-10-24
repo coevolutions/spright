@@ -14,10 +14,6 @@ use winit::{
     window::Window,
 };
 
-struct Prepared {
-    spright: spright::Prepared,
-}
-
 enum UserEvent {
     Graphics(Graphics),
 }
@@ -95,59 +91,48 @@ impl Inner {
         }
     }
 
-    pub fn prepare(&self, device: &Device, target_size: wgpu::Extent3d) -> Prepared {
-        Prepared {
-            spright: self.spright_renderer.prepare(
-                device,
-                target_size,
-                &[
-                    spright::Group {
-                        texture: &self.texture1,
-                        texture_kind: spright::TextureKind::Color,
-                        sprites: &[
-                            spright::Sprite {
-                                src: spright::Rect::new(0, 0, 280 / 2, 210 / 2),
-                                transform: glam::Affine2::IDENTITY,
-                                tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
-                            },
-                            spright::Sprite {
-                                src: spright::Rect::new(0, 0, 280, 210),
-                                transform: glam::Affine2::IDENTITY,
-                                tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
-                            },
-                        ],
-                    },
-                    spright::Group {
-                        texture: &self.texture2,
-                        texture_kind: spright::TextureKind::Color,
-                        sprites: &[spright::Sprite {
-                            src: spright::Rect::new(0, 0, 386, 395),
-                            transform: glam::Affine2::from_scale(glam::Vec2::new(2.0, 3.0))
-                                * glam::Affine2::from_translation(glam::Vec2::new(200.0, 0.0)),
-                            tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
-                        }],
-                    },
-                    spright::Group {
-                        texture: &self.texture1,
-                        texture_kind: spright::TextureKind::Color,
-                        sprites: &[spright::Sprite {
-                            src: spright::Rect::new(0, 0, 280, 210),
-                            transform: glam::Affine2::from_translation(glam::Vec2::new(
-                                140.0 * 3.0,
-                                105.0 * 3.0,
-                            )) * glam::Affine2::from_angle(1.0)
-                                * glam::Affine2::from_scale(glam::Vec2::new(3.0, 3.0))
-                                * glam::Affine2::from_translation(glam::Vec2::new(-140.0, -105.0)),
-                            tint: spright::Color::new(0xff, 0xff, 0x00, 0x88),
-                        }],
-                    },
-                ],
-            ),
-        }
+    pub fn prepare(&mut self, device: &Device, queue: &Queue, target_size: wgpu::Extent3d) {
+        self.spright_renderer.prepare(
+            device,
+            queue,
+            target_size,
+            &[
+                spright::Sprite {
+                    texture: &self.texture1,
+                    src: spright::Rect::new(0, 0, 280 / 2, 210 / 2),
+                    transform: glam::Affine2::IDENTITY,
+                    tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
+                },
+                spright::Sprite {
+                    texture: &self.texture1,
+                    src: spright::Rect::new(0, 0, 280, 210),
+                    transform: glam::Affine2::from_translation(glam::vec2(100.0, 100.0)),
+                    tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
+                },
+                spright::Sprite {
+                    texture: &self.texture2,
+                    src: spright::Rect::new(0, 0, 386, 395),
+                    transform: glam::Affine2::from_scale(glam::Vec2::new(2.0, 3.0))
+                        * glam::Affine2::from_translation(glam::Vec2::new(200.0, 0.0)),
+                    tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
+                },
+                spright::Sprite {
+                    texture: &self.texture1,
+                    src: spright::Rect::new(0, 0, 280, 210),
+                    transform: glam::Affine2::from_translation(glam::Vec2::new(
+                        140.0 * 3.0,
+                        105.0 * 3.0,
+                    )) * glam::Affine2::from_angle(1.0)
+                        * glam::Affine2::from_scale(glam::Vec2::new(3.0, 3.0))
+                        * glam::Affine2::from_translation(glam::Vec2::new(-140.0, -105.0)),
+                    tint: spright::Color::new(0xff, 0xff, 0x00, 0x88),
+                },
+            ],
+        );
     }
 
-    pub fn render<'rpass>(&'rpass self, rpass: &mut RenderPass<'rpass>, prepared: &Prepared) {
-        self.spright_renderer.render(rpass, &prepared.spright);
+    pub fn render<'rpass>(&'rpass self, rpass: &mut RenderPass<'rpass>) {
+        self.spright_renderer.render(rpass);
     }
 }
 
@@ -231,6 +216,12 @@ impl ApplicationHandler<UserEvent> for Application {
         event: WindowEvent,
     ) {
         match event {
+            WindowEvent::Resized(size) => {
+                let Some(gfx) = &mut self.gfx else {
+                    return;
+                };
+                gfx.resize(size);
+            }
             WindowEvent::RedrawRequested => {
                 let Some(gfx) = &mut self.gfx else {
                     return;
@@ -251,7 +242,7 @@ impl ApplicationHandler<UserEvent> for Application {
                     .device
                     .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
-                let prepared = inner.prepare(&gfx.device, frame.texture.size());
+                inner.prepare(&gfx.device, &gfx.queue, frame.texture.size());
                 {
                     let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                         color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -264,11 +255,13 @@ impl ApplicationHandler<UserEvent> for Application {
                         })],
                         ..Default::default()
                     });
-                    inner.render(&mut rpass, &prepared);
+                    inner.render(&mut rpass);
                 }
 
                 gfx.queue.submit(Some(encoder.finish()));
+                gfx.window.pre_present_notify();
                 frame.present();
+                gfx.window.request_redraw();
             }
             WindowEvent::CloseRequested => event_loop.exit(),
             _ => {}
