@@ -49,6 +49,7 @@ pub struct Group<'a> {
 }
 
 /// Represents a chunk of the texture to draw.
+#[derive(Debug, Clone)]
 pub struct Sprite {
     /// Source rectangle from the texture to draw from.
     pub src: Rect,
