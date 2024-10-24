@@ -78,28 +78,28 @@ impl Inner {
                         sprites: &[
                             spright::Sprite {
                                 src: spright::Rect {
-                                    x: 0.0,
-                                    y: 0.0,
-                                    width: 280.0 / 2.0,
-                                    height: 210.0 / 2.0,
+                                    x: 0,
+                                    y: 0,
+                                    width: 280 / 2,
+                                    height: 210 / 2,
                                 },
                                 dest_size: spright::Size {
-                                    width: 280.0,
-                                    height: 210.0,
+                                    width: 280,
+                                    height: 210,
                                 },
                                 transform: spright::AffineTransform::IDENTITY,
                                 tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
                             },
                             spright::Sprite {
                                 src: spright::Rect {
-                                    x: 0.0,
-                                    y: 0.0,
-                                    width: 280.0,
-                                    height: 210.0,
+                                    x: 0,
+                                    y: 0,
+                                    width: 280,
+                                    height: 210,
                                 },
                                 dest_size: spright::Size {
-                                    width: 280.0,
-                                    height: 210.0,
+                                    width: 280,
+                                    height: 210,
                                 },
                                 transform: spright::AffineTransform::IDENTITY,
                                 tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
@@ -111,14 +111,14 @@ impl Inner {
                         texture_kind: spright::TextureKind::Color,
                         sprites: &[spright::Sprite {
                             src: spright::Rect {
-                                x: 0.0,
-                                y: 0.0,
-                                width: 386.0,
-                                height: 395.0,
+                                x: 0,
+                                y: 0,
+                                width: 386,
+                                height: 395,
                             },
                             dest_size: spright::Size {
-                                width: 386.0,
-                                height: 395.0,
+                                width: 386,
+                                height: 395,
                             },
                             transform: spright::AffineTransform::translation(200.0, 0.0)
                                 * spright::AffineTransform::scaling(2.0, 3.0),
@@ -130,14 +130,14 @@ impl Inner {
                         texture_kind: spright::TextureKind::Color,
                         sprites: &[spright::Sprite {
                             src: spright::Rect {
-                                x: 0.0,
-                                y: 0.0,
-                                width: 280.0,
-                                height: 210.0,
+                                x: 0,
+                                y: 0,
+                                width: 280,
+                                height: 210,
                             },
                             dest_size: spright::Size {
-                                width: 280.0,
-                                height: 210.0,
+                                width: 280,
+                                height: 210,
                             },
                             transform: spright::AffineTransform::translation(-140.0, -105.0)
                                 * spright::AffineTransform::scaling(3.0, 3.0)

@@ -8,46 +8,46 @@ use wgpu::util::DeviceExt as _;
 pub type Color = rgb::RGBA8;
 
 /// Represents a rectangle.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Rect {
     /// x coordinate of top-left corner.
-    pub x: f32,
+    pub x: i32,
     /// y coordinate of top-left corner.
-    pub y: f32,
+    pub y: i32,
     /// Width.
-    pub width: f32,
+    pub width: u32,
     /// Height.
-    pub height: f32,
+    pub height: u32,
 }
 
 /// Represents a size.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Size {
     /// Width.
-    pub width: f32,
+    pub width: u32,
     /// Height.
-    pub height: f32,
+    pub height: u32,
 }
 
 impl Rect {
     /// Gets the x coordinate of top-left corner.
-    pub const fn left(&self) -> f32 {
+    pub const fn left(&self) -> i32 {
         self.x
     }
 
     /// Gets the y coordinate of top-left corner.
-    pub const fn top(&self) -> f32 {
+    pub const fn top(&self) -> i32 {
         self.y
     }
 
     /// Gets the x coordinate of bottom-right corner.
-    pub const fn right(&self) -> f32 {
-        self.x + self.width
+    pub const fn right(&self) -> i32 {
+        self.x + self.width as i32
     }
 
     /// Gets the y coordinate of bottom-right corner.
-    pub const fn bottom(&self) -> f32 {
-        self.y + self.height
+    pub const fn bottom(&self) -> i32 {
+        self.y + self.height as i32
     }
 }
 
@@ -316,29 +316,31 @@ impl Renderer {
                         ];
 
                         let (x0, y0) = s.transform.transform(0.0, 0.0);
-                        let (x1, y1) = s.transform.transform(0.0, s.dest_size.height);
-                        let (x2, y2) = s.transform.transform(s.dest_size.width, 0.0);
-                        let (x3, y3) = s.transform.transform(s.dest_size.width, s.dest_size.height);
+                        let (x1, y1) = s.transform.transform(0.0, s.dest_size.height as f32);
+                        let (x2, y2) = s.transform.transform(s.dest_size.width as f32, 0.0);
+                        let (x3, y3) = s
+                            .transform
+                            .transform(s.dest_size.width as f32, s.dest_size.height as f32);
 
                         [
                             Vertex {
                                 position: [x0, y0, 0.0],
-                                tex_coords: [s.src.left(), s.src.top()],
+                                tex_coords: [s.src.left() as f32, s.src.top() as f32],
                                 tint,
                             },
                             Vertex {
                                 position: [x1, y1, 0.0],
-                                tex_coords: [s.src.left(), s.src.bottom()],
+                                tex_coords: [s.src.left() as f32, s.src.bottom() as f32],
                                 tint,
                             },
                             Vertex {
                                 position: [x2, y2, 0.0],
-                                tex_coords: [s.src.right(), s.src.top()],
+                                tex_coords: [s.src.right() as f32, s.src.top() as f32],
                                 tint,
                             },
                             Vertex {
                                 position: [x3, y3, 0.0],
-                                tex_coords: [s.src.right(), s.src.bottom()],
+                                tex_coords: [s.src.right() as f32, s.src.bottom() as f32],
                                 tint,
                             },
                         ]
