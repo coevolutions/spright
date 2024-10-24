@@ -1,6 +1,7 @@
 pub mod texture;
 mod transform;
 
+use crevice::std140::AsStd140;
 pub use transform::AffineTransform;
 
 use wgpu::util::DeviceExt as _;
@@ -107,17 +108,16 @@ struct Vertex {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
+#[derive(Copy, Clone, Debug, AsStd140)]
 struct TextureUniforms {
-    size: [f32; 2],
+    size: mint::Vector3<f32>,
     is_mask: u32,
-    _padding: u32,
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
+#[derive(Copy, Clone, Debug, AsStd140)]
 struct TargetUniforms {
-    size: [f32; 2],
+    size: mint::Vector3<f32>,
 }
 
 impl Vertex {
@@ -240,14 +240,19 @@ impl Renderer {
         let texture_uniforms_buffer =
             device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: Some("spright: texture_uniforms_buffer"),
-                contents: bytemuck::bytes_of(&TextureUniforms {
-                    size: [texture_size.width as f32, texture_size.height as f32],
-                    _padding: 0,
+                contents: TextureUniforms {
+                    size: mint::Vector3 {
+                        x: texture_size.width as f32,
+                        y: texture_size.height as f32,
+                        z: 0.0,
+                    },
                     is_mask: match g.texture_kind {
                         TextureKind::Color => 0,
                         TextureKind::Mask => 1,
                     },
-                }),
+                }
+                .as_std140()
+                .as_bytes(),
                 usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             });
 
@@ -275,9 +280,15 @@ impl Renderer {
 
         let target_uniforms_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("spright: target_uniforms_buffer"),
-            contents: bytemuck::bytes_of(&TargetUniforms {
-                size: [target_size.width as f32, target_size.height as f32],
-            }),
+            contents: TargetUniforms {
+                size: mint::Vector3 {
+                    x: target_size.width as f32,
+                    y: target_size.height as f32,
+                    z: 0.0,
+                },
+            }
+            .as_std140()
+            .as_bytes(),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
 

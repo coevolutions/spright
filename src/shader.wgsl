@@ -4,7 +4,7 @@ var t: texture_2d<f32>;
 var s: sampler;
 
 struct TextureUniforms {
-    size: vec2<f32>,
+    size: vec3<f32>,
     is_mask: u32,
 }
 
@@ -12,7 +12,7 @@ struct TextureUniforms {
 var<uniform> texture_uniforms: TextureUniforms;
 
 struct TargetUniforms {
-    size: vec2<f32>,
+    size: vec3<f32>,
 }
 
 @group(1) @binding(0)
@@ -37,7 +37,7 @@ fn vs_main(model: VertexInput) -> VertexOutput {
     out.tint = model.tint;
 
     // Normalize screen position to NDC position.
-    var pos = (model.position.xy / target_uniforms.size - 0.5) * 2.0;
+    var pos = (model.position.xy / target_uniforms.size.xy - 0.5) * 2.0;
     pos.y = -pos.y;
 
     out.tex_coords = model.tex_coords;
@@ -47,7 +47,7 @@ fn vs_main(model: VertexInput) -> VertexOutput {
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    var sample = textureSample(t, s, in.tex_coords / texture_uniforms.size);
+    var sample = textureSample(t, s, in.tex_coords / texture_uniforms.size.xy);
     if texture_uniforms.is_mask == 1 {
         sample = vec4(1.0, 1.0, 1.0, sample.r);
     }

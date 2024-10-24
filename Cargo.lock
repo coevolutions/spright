@@ -369,6 +369,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "crevice"
+version = "0.17.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ae753ee79d32a337b7c353db8fa045d2920021f78fc406416a2af7be3aeb407c"
+dependencies = [
+ "bytemuck",
+ "crevice-derive",
+ "mint",
+]
+
+[[package]]
+name = "crevice-derive"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2320c07ceb3e491e2bd09ade90a91c29a42d9553f1bde60c945cb5c34958b26e"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
+]
+
+[[package]]
 name = "crossbeam-utils"
 version = "0.8.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -819,6 +841,12 @@ dependencies = [
  "adler2",
  "simd-adler32",
 ]
+
+[[package]]
+name = "mint"
+version = "0.5.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e53debba6bda7a793e5f99b8dacf19e626084f525f7829104ba9898f367d85ff"
 
 [[package]]
 name = "naga"
@@ -1494,10 +1522,12 @@ dependencies = [
 
 [[package]]
 name = "spright"
-version = "0.9.1"
+version = "0.9.2"
 dependencies = [
  "bytemuck",
+ "crevice",
  "image",
+ "mint",
  "pollster",
  "rgb",
  "wgpu",
