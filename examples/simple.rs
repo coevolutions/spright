@@ -179,8 +179,7 @@ async fn create_graphics(window: Arc<Window>) -> Result<Graphics, CreateSurfaceE
             &DeviceDescriptor {
                 required_limits: wgpu::Limits::downlevel_webgl2_defaults()
                     .using_resolution(adapter.limits()),
-                required_features: wgpu::Features::default()
-                    | wgpu::Features::TEXTURE_BINDING_ARRAY,
+                required_features: wgpu::Features::default(),
                 ..Default::default()
             },
             None,
