@@ -338,7 +338,7 @@ impl Renderer {
             usage: wgpu::BufferUsages::VERTEX,
         });
 
-        let indices = (0..g.sprites.len() as u16)
+        let indices = (0..g.sprites.len() as u32)
             .flat_map(|i| {
                 [
                     0, 1, 2, //
@@ -350,7 +350,7 @@ impl Renderer {
 
         let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("spright: index_buffer"),
-            contents: bytemuck::cast_slice::<u16, _>(&indices[..]),
+            contents: bytemuck::cast_slice(&indices[..]),
             usage: wgpu::BufferUsages::INDEX,
         });
 
@@ -383,7 +383,7 @@ impl Renderer {
         rpass.set_pipeline(&self.render_pipeline);
         for g in prepared.groups.iter() {
             rpass.set_vertex_buffer(0, g.vertex_buffer.slice(..));
-            rpass.set_index_buffer(g.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+            rpass.set_index_buffer(g.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
             rpass.set_bind_group(0, &g.texture_bind_group, &[]);
             rpass.set_bind_group(1, &g.target_uniforms_bind_group, &[]);
             rpass.draw_indexed(0..g.num_indices, 0, 0..1);
