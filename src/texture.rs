@@ -1,4 +1,4 @@
-use image::GenericImageView;
+use image::GenericImageView as _;
 
 pub fn load(
     device: &wgpu::Device,
