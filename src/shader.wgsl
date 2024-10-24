@@ -37,7 +37,7 @@ fn vs_main(model: VertexInput) -> VertexOutput {
     out.tint = model.tint;
 
     // Normalize screen position to NDC position.
-    var pos = model.position.xy / target_uniforms.size - 1.0;
+    var pos = (model.position.xy / target_uniforms.size - 0.5) * 2.0;
     pos.y = -pos.y;
 
     out.tex_coords = model.tex_coords;
