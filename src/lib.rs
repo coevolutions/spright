@@ -1,7 +1,7 @@
 pub mod texture;
 mod transform;
 
-use crevice::std140::AsStd140;
+use crevice::std140::*;
 pub use transform::Transform;
 
 use wgpu::util::DeviceExt as _;
@@ -110,14 +110,14 @@ struct Vertex {
 #[repr(C)]
 #[derive(Copy, Clone, Debug, AsStd140)]
 struct TextureUniforms {
-    size: mint::Vector3<f32>,
+    size: Vec3,
     is_mask: u32,
 }
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, AsStd140)]
 struct TargetUniforms {
-    size: mint::Vector3<f32>,
+    size: Vec3,
 }
 
 impl Vertex {
@@ -241,7 +241,7 @@ impl Renderer {
             device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: Some("spright: texture_uniforms_buffer"),
                 contents: TextureUniforms {
-                    size: mint::Vector3 {
+                    size: Vec3 {
                         x: texture_size.width as f32,
                         y: texture_size.height as f32,
                         z: 0.0,
@@ -281,7 +281,7 @@ impl Renderer {
         let target_uniforms_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("spright: target_uniforms_buffer"),
             contents: TargetUniforms {
-                size: mint::Vector3 {
+                size: Vec3 {
                     x: target_size.width as f32,
                     y: target_size.height as f32,
                     z: 0.0,

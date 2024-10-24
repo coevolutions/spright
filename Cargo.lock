@@ -1527,7 +1527,6 @@ dependencies = [
  "bytemuck",
  "crevice",
  "image",
- "mint",
  "pollster",
  "rgb",
  "wgpu",
