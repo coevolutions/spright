@@ -47,11 +47,9 @@ struct Inner {
 
 impl Inner {
     fn new(gfx: &Graphics) -> Self {
-        let [w, h]: [u32; 2] = gfx.window.inner_size().into();
         let spright_renderer = Renderer::new(
             &gfx.device,
             gfx.surface.get_capabilities(&gfx.adapter).formats[0],
-            [w as f32, h as f32],
         );
         Self {
             spright_renderer,
@@ -68,15 +66,11 @@ impl Inner {
         }
     }
 
-    pub fn resize(&mut self, queue: &Queue, screen_size: winit::dpi::PhysicalSize<u32>) {
-        self.spright_renderer
-            .resize(queue, [screen_size.width as f32, screen_size.height as f32]);
-    }
-
-    pub fn prepare(&self, device: &Device) -> Prepared {
+    pub fn prepare(&self, device: &Device, target_size: wgpu::Extent3d) -> Prepared {
         Prepared {
             spright: self.spright_renderer.prepare(
                 device,
+                target_size,
                 &[
                     spright::Group {
                         texture: &self.texture1,
@@ -93,7 +87,7 @@ impl Inner {
                                     width: 280.0,
                                     height: 210.0,
                                 },
-                                transform: spright::AffineTransform::identity(),
+                                transform: spright::AffineTransform::IDENTITY,
                                 tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
                             },
                             spright::Sprite {
@@ -107,7 +101,7 @@ impl Inner {
                                     width: 280.0,
                                     height: 210.0,
                                 },
-                                transform: spright::AffineTransform::identity(),
+                                transform: spright::AffineTransform::IDENTITY,
                                 tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
                             },
                         ],
@@ -243,17 +237,6 @@ impl ApplicationHandler<UserEvent> for Application {
         event: WindowEvent,
     ) {
         match event {
-            WindowEvent::Resized(new_size) => {
-                let Some(gfx) = &mut self.gfx else {
-                    return;
-                };
-                gfx.resize(new_size);
-
-                let Some(inner) = &mut self.inner else {
-                    return;
-                };
-                inner.resize(&gfx.queue, new_size);
-            }
             WindowEvent::RedrawRequested => {
                 let Some(gfx) = &mut self.gfx else {
                     return;
@@ -274,7 +257,7 @@ impl ApplicationHandler<UserEvent> for Application {
                     .device
                     .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
-                let prepared = inner.prepare(&gfx.device);
+                let prepared = inner.prepare(&gfx.device, frame.texture.size());
                 {
                     let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                         color_attachments: &[Some(wgpu::RenderPassColorAttachment {

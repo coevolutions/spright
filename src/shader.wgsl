@@ -11,8 +11,12 @@ struct TextureUniforms {
 @group(0) @binding(2)
 var<uniform> texture_uniforms: TextureUniforms;
 
+struct TargetUniforms {
+    size: vec2<f32>,
+}
+
 @group(1) @binding(0)
-var<uniform> screen_size: vec2<f32>;
+var<uniform> target_uniforms: TargetUniforms;
 
 struct VertexInput {
     @location(0) position: vec3<f32>,
@@ -33,7 +37,7 @@ fn vs_main(model: VertexInput) -> VertexOutput {
     out.tint = model.tint;
 
     // Normalize screen position to NDC position.
-    var pos = model.position.xy / screen_size - 1.0;
+    var pos = model.position.xy / target_uniforms.size - 1.0;
     pos.y = -pos.y;
 
     out.tex_coords = model.tex_coords;
