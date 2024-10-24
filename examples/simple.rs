@@ -106,23 +106,13 @@ impl Inner {
                         texture_kind: spright::TextureKind::Color,
                         sprites: &[
                             spright::Sprite {
-                                src: spright::Rect {
-                                    x: 0,
-                                    y: 0,
-                                    width: 280 / 2,
-                                    height: 210 / 2,
-                                },
-                                transform: spright::Transform::IDENTITY,
+                                src: spright::Rect::new(0, 0, 280 / 2, 210 / 2),
+                                transform: glam::Affine2::IDENTITY,
                                 tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
                             },
                             spright::Sprite {
-                                src: spright::Rect {
-                                    x: 0,
-                                    y: 0,
-                                    width: 280,
-                                    height: 210,
-                                },
-                                transform: spright::Transform::IDENTITY,
+                                src: spright::Rect::new(0, 0, 280, 210),
+                                transform: glam::Affine2::IDENTITY,
                                 tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
                             },
                         ],
@@ -131,14 +121,9 @@ impl Inner {
                         texture: &self.texture2,
                         texture_kind: spright::TextureKind::Color,
                         sprites: &[spright::Sprite {
-                            src: spright::Rect {
-                                x: 0,
-                                y: 0,
-                                width: 386,
-                                height: 395,
-                            },
-                            transform: spright::Transform::translation(200.0, 0.0)
-                                * spright::Transform::scaling(2.0, 3.0),
+                            src: spright::Rect::new(0, 0, 386, 395),
+                            transform: glam::Affine2::from_scale(glam::Vec2::new(2.0, 3.0))
+                                * glam::Affine2::from_translation(glam::Vec2::new(200.0, 0.0)),
                             tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
                         }],
                     },
@@ -146,16 +131,13 @@ impl Inner {
                         texture: &self.texture1,
                         texture_kind: spright::TextureKind::Color,
                         sprites: &[spright::Sprite {
-                            src: spright::Rect {
-                                x: 0,
-                                y: 0,
-                                width: 280,
-                                height: 210,
-                            },
-                            transform: spright::Transform::translation(-140.0, -105.0)
-                                * spright::Transform::scaling(3.0, 3.0)
-                                * spright::Transform::rotation(1.0)
-                                * spright::Transform::translation(140.0 * 3.0, 105.0 * 3.0),
+                            src: spright::Rect::new(0, 0, 280, 210),
+                            transform: glam::Affine2::from_translation(glam::Vec2::new(
+                                140.0 * 3.0,
+                                105.0 * 3.0,
+                            )) * glam::Affine2::from_angle(1.0)
+                                * glam::Affine2::from_scale(glam::Vec2::new(3.0, 3.0))
+                                * glam::Affine2::from_translation(glam::Vec2::new(-140.0, -105.0)),
                             tint: spright::Color::new(0xff, 0xff, 0x00, 0x88),
                         }],
                     },

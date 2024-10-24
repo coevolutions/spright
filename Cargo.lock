@@ -376,6 +376,7 @@ checksum = "ae753ee79d32a337b7c353db8fa045d2920021f78fc406416a2af7be3aeb407c"
 dependencies = [
  "bytemuck",
  "crevice-derive",
+ "glam",
  "mint",
 ]
 
@@ -541,6 +542,15 @@ dependencies = [
  "khronos_api",
  "log",
  "xml-rs",
+]
+
+[[package]]
+name = "glam"
+version = "0.29.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c28091a37a5d09b555cb6628fd954da299b536433834f5b8e59eba78e0cbbf8a"
+dependencies = [
+ "mint",
 ]
 
 [[package]]
@@ -1522,10 +1532,11 @@ dependencies = [
 
 [[package]]
 name = "spright"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "bytemuck",
  "crevice",
+ "glam",
  "image",
  "pollster",
  "rgb",

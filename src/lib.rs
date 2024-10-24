@@ -1,7 +1,5 @@
-mod transform;
-
-use crevice::std140::*;
-pub use transform::Transform;
+use crevice::std140::AsStd140;
+use glam::*;
 
 use wgpu::util::DeviceExt as _;
 
@@ -10,35 +8,39 @@ pub type Color = rgb::RGBA8;
 /// Represents a rectangle.
 #[derive(Debug, Clone, Copy)]
 pub struct Rect {
-    /// x coordinate of top-left corner.
-    pub x: i32,
-    /// y coordinate of top-left corner.
-    pub y: i32,
-    /// Width.
-    pub width: u32,
-    /// Height.
-    pub height: u32,
+    /// Offset of the rectangle.
+    pub offset: IVec2,
+    /// Size of the rectangle.
+    pub size: UVec2,
 }
 
 impl Rect {
+    /// Creates a new rectangle.
+    pub fn new(x: i32, y: i32, width: u32, height: u32) -> Self {
+        Self {
+            offset: IVec2::new(x, y),
+            size: UVec2::new(width, height),
+        }
+    }
+
     /// Gets the x coordinate of top-left corner.
     pub const fn left(&self) -> i32 {
-        self.x
+        self.offset.x
     }
 
     /// Gets the y coordinate of top-left corner.
     pub const fn top(&self) -> i32 {
-        self.y
+        self.offset.y
     }
 
     /// Gets the x coordinate of bottom-right corner.
     pub const fn right(&self) -> i32 {
-        self.x + self.width as i32
+        self.offset.x + self.size.x as i32
     }
 
     /// Gets the y coordinate of bottom-right corner.
     pub const fn bottom(&self) -> i32 {
-        self.y + self.height as i32
+        self.offset.y + self.size.y as i32
     }
 }
 
@@ -71,7 +73,7 @@ pub struct Sprite {
     pub src: Rect,
 
     /// Transformation of the source rectangle into screen space.
-    pub transform: Transform,
+    pub transform: Affine2,
 
     /// Tint.
     pub tint: Color,
@@ -313,12 +315,17 @@ impl Renderer {
                             s.tint.a as f32 / 255.0,
                         ];
 
-                        let (x0, y0) = s.transform.transform(0.0, 0.0);
-                        let (x1, y1) = s.transform.transform(0.0, s.src.height as f32);
-                        let (x2, y2) = s.transform.transform(s.src.width as f32, 0.0);
-                        let (x3, y3) = s
+                        let Vec2 { x: x0, y: y0 } =
+                            s.transform.transform_point2(Vec2::new(0.0, 0.0));
+                        let Vec2 { x: x1, y: y1 } = s
                             .transform
-                            .transform(s.src.width as f32, s.src.height as f32);
+                            .transform_point2(Vec2::new(0.0, s.src.size.y as f32));
+                        let Vec2 { x: x2, y: y2 } = s
+                            .transform
+                            .transform_point2(Vec2::new(s.src.size.x as f32, 0.0));
+                        let Vec2 { x: x3, y: y3 } = s
+                            .transform
+                            .transform_point2(Vec2::new(s.src.size.x as f32, s.src.size.y as f32));
 
                         [
                             Vertex {
