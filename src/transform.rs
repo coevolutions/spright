@@ -1,18 +1,16 @@
 /// A 3x2 transformation matrix representing an affine transform.
 ///
 /// In other words, it is a 2x2 transformation matrix with a translation component, or a 3x3 homogenous transform matrix.
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct AffineTransform([f32; 6]);
 
 impl AffineTransform {
-    /// Creates an identity transform that does nothing.
-    pub const fn identity() -> Self {
-        Self([
-            1.0, 0.0, //
-            0.0, 1.0, //
-            0.0, 0.0,
-        ])
-    }
+    // Identity matrix.
+    pub const IDENTITY: Self = Self([
+        1.0, 0.0, //
+        0.0, 1.0, //
+        0.0, 0.0,
+    ]);
 
     /// Creates a matrix from each individual element.
     ///
@@ -117,16 +115,6 @@ impl AffineTransform {
             x * self.0[0] + y * self.0[2] + self.0[4],
             x * self.0[1] + y * self.0[3] + self.0[5],
         )
-    }
-
-    /// Returns the underlying array in column-major order.
-    pub const fn to_mat4x4(&self) -> [[f32; 4]; 4] {
-        [
-            [self.0[0], self.0[1], 0.0, 0.0],
-            [self.0[2], self.0[3], 0.0, 0.0],
-            [self.0[4], self.0[5], 1.0, 0.0],
-            [0.0, 0.0, 0.0, 1.0],
-        ]
     }
 }
 
