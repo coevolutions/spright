@@ -2,9 +2,15 @@
 ///
 /// In other words, it is a 2x2 transformation matrix with a translation component, or a 3x3 homogenous transform matrix.
 #[derive(Clone, Copy, Debug)]
-pub struct AffineTransform([f32; 6]);
+pub struct Transform([f32; 6]);
 
-impl AffineTransform {
+impl Default for Transform {
+    fn default() -> Self {
+        Self::IDENTITY
+    }
+}
+
+impl Transform {
     // Identity matrix.
     pub const IDENTITY: Self = Self([
         1.0, 0.0, //
@@ -118,8 +124,8 @@ impl AffineTransform {
     }
 }
 
-impl std::ops::MulAssign<AffineTransform> for AffineTransform {
-    fn mul_assign(&mut self, rhs: AffineTransform) {
+impl std::ops::MulAssign<Transform> for Transform {
+    fn mul_assign(&mut self, rhs: Transform) {
         self.0 = [
             self.0[0] * rhs.0[0] + self.0[1] * rhs.0[2],
             self.0[0] * rhs.0[1] + self.0[1] * rhs.0[3],
@@ -131,10 +137,10 @@ impl std::ops::MulAssign<AffineTransform> for AffineTransform {
     }
 }
 
-impl std::ops::Mul<AffineTransform> for AffineTransform {
-    type Output = AffineTransform;
+impl std::ops::Mul<Transform> for Transform {
+    type Output = Transform;
 
-    fn mul(mut self, rhs: AffineTransform) -> Self::Output {
+    fn mul(mut self, rhs: Transform) -> Self::Output {
         self *= rhs;
         self
     }

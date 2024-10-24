@@ -83,7 +83,7 @@ impl Inner {
                                     width: 280 / 2,
                                     height: 210 / 2,
                                 },
-                                transform: spright::AffineTransform::IDENTITY,
+                                transform: spright::Transform::IDENTITY,
                                 tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
                             },
                             spright::Sprite {
@@ -93,7 +93,7 @@ impl Inner {
                                     width: 280,
                                     height: 210,
                                 },
-                                transform: spright::AffineTransform::IDENTITY,
+                                transform: spright::Transform::IDENTITY,
                                 tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
                             },
                         ],
@@ -108,8 +108,8 @@ impl Inner {
                                 width: 386,
                                 height: 395,
                             },
-                            transform: spright::AffineTransform::translation(200.0, 0.0)
-                                * spright::AffineTransform::scaling(2.0, 3.0),
+                            transform: spright::Transform::translation(200.0, 0.0)
+                                * spright::Transform::scaling(2.0, 3.0),
                             tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
                         }],
                     },
@@ -123,10 +123,10 @@ impl Inner {
                                 width: 280,
                                 height: 210,
                             },
-                            transform: spright::AffineTransform::translation(-140.0, -105.0)
-                                * spright::AffineTransform::scaling(3.0, 3.0)
-                                * spright::AffineTransform::rotation(1.0)
-                                * spright::AffineTransform::translation(140.0 * 3.0, 105.0 * 3.0),
+                            transform: spright::Transform::translation(-140.0, -105.0)
+                                * spright::Transform::scaling(3.0, 3.0)
+                                * spright::Transform::rotation(1.0)
+                                * spright::Transform::translation(140.0 * 3.0, 105.0 * 3.0),
                             tint: spright::Color::new(0xff, 0xff, 0x00, 0x88),
                         }],
                     },

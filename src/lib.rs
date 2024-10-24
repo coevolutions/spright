@@ -2,7 +2,7 @@ pub mod texture;
 mod transform;
 
 use crevice::std140::AsStd140;
-pub use transform::AffineTransform;
+pub use transform::Transform;
 
 use wgpu::util::DeviceExt as _;
 
@@ -72,7 +72,7 @@ pub struct Sprite {
     pub src: Rect,
 
     /// Transformation of the source rectangle into screen space.
-    pub transform: AffineTransform,
+    pub transform: Transform,
 
     /// Tint.
     pub tint: Color,
