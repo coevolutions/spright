@@ -2,37 +2,51 @@ pub mod texture;
 
 use wgpu::util::DeviceExt as _;
 
+/// Represents a rectangle.
 #[derive(Debug, Clone)]
 pub struct Rect {
+    /// x coordinate of top-left corner.
     pub x: f32,
+    /// y coordinate of top-left corner.
     pub y: f32,
+    /// Width.
     pub width: f32,
+    /// Height.
     pub height: f32,
 }
 
 impl Rect {
+    /// Gets the x coordinate of top-left corner.
     pub const fn left(&self) -> f32 {
         self.x
     }
 
+    /// Gets the y coordinate of top-left corner.
     pub const fn top(&self) -> f32 {
         self.y
     }
 
+    /// Gets the x coordinate of bottom-right corner.
     pub const fn right(&self) -> f32 {
         self.x + self.width
     }
 
+    /// Gets the y coordinate of bottom-right corner.
     pub const fn bottom(&self) -> f32 {
         self.y + self.height
     }
 }
 
+/// Represents a chunk of the texture to draw.
 pub struct Sprite {
+    /// Source rectangle from the texture to draw from.
     pub src: Rect,
+
+    /// Destination rectangle to draw to.
     pub dest: Rect,
 }
 
+/// Prepared data to draw with.
 pub struct PerFrameData {
     texture_bind_group: wgpu::BindGroup,
     uniforms_bind_group: wgpu::BindGroup,
@@ -41,6 +55,7 @@ pub struct PerFrameData {
     num_indices: u32,
 }
 
+/// Encapsulates static state for rendering.
 pub struct Renderer {
     render_pipeline: wgpu::RenderPipeline,
     texture_bind_group_layout: wgpu::BindGroupLayout,
@@ -78,6 +93,7 @@ impl Vertex {
 }
 
 impl Renderer {
+    /// Creates a new renderer.
     pub fn new(device: &wgpu::Device, texture_format: wgpu::TextureFormat) -> Self {
         let shader = device.create_shader_module(wgpu::include_wgsl!("shader.wgsl"));
         let texture_bind_group_layout =
@@ -167,6 +183,7 @@ impl Renderer {
         }
     }
 
+    /// Prepares sprites for rendering.
     pub fn prepare(
         &self,
         device: &wgpu::Device,
@@ -266,6 +283,7 @@ impl Renderer {
         }
     }
 
+    /// Renders prepared sprites.
     pub fn render<'rpass>(
         &'rpass self,
         rpass: &mut wgpu::RenderPass<'rpass>,
