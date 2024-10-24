@@ -5,6 +5,7 @@ var s: sampler;
 
 struct TextureUniforms {
     size: vec2<f32>,
+    is_mask: u32,
 }
 
 @group(0) @binding(2)
@@ -42,5 +43,9 @@ fn vs_main(model: VertexInput) -> VertexOutput {
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    return textureSample(t, s, in.tex_coords / texture_uniforms.size) * in.tint;
+    var sample = textureSample(t, s, in.tex_coords / texture_uniforms.size);
+    if texture_uniforms.is_mask == 1 {
+        sample = vec4(1.0, 1.0, 1.0, sample.r);
+    }
+    return sample * in.tint;
 }

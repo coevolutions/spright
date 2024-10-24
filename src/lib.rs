@@ -39,10 +39,23 @@ impl Rect {
     }
 }
 
+/// Whether the texture is a mask or color.
+#[derive(Debug, Clone, Copy)]
+pub enum TextureKind {
+    /// Texture is color.
+    Color,
+
+    /// Texture is mask (R channel is alpha).
+    Mask,
+}
+
 /// Represents a group of sprites from the same texture.
 pub struct Group<'a> {
     /// The texture to draw from.
     pub texture: &'a wgpu::Texture,
+
+    /// What the kind of texture is (color or mask).
+    pub kind: TextureKind,
 
     /// The sprites to draw.
     pub sprites: &'a [Sprite],
@@ -94,6 +107,8 @@ struct Vertex {
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 struct TextureUniforms {
     size: [f32; 2],
+    _padding: u32,
+    is_mask: u32,
 }
 
 #[repr(C)]
@@ -243,6 +258,7 @@ impl Renderer {
         &self,
         device: &wgpu::Device,
         texture: &wgpu::Texture,
+        texture_kind: TextureKind,
         sprites: &[Sprite],
     ) -> PreparedGroup {
         let wgpu::Extent3d { width, height, .. } = texture.size();
@@ -252,6 +268,11 @@ impl Renderer {
                 label: Some("spright: texture_uniforms_buffer"),
                 contents: bytemuck::cast_slice(&[TextureUniforms {
                     size: [width as f32, height as f32],
+                    _padding: 0,
+                    is_mask: match texture_kind {
+                        TextureKind::Color => 0,
+                        TextureKind::Mask => 1,
+                    },
                 }]),
                 usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             });
@@ -347,7 +368,7 @@ impl Renderer {
         Prepared {
             groups: groups
                 .iter()
-                .map(|g| self.prepare_one(device, g.texture, &g.sprites))
+                .map(|g| self.prepare_one(device, g.texture, g.kind, &g.sprites))
                 .collect::<Vec<_>>(),
         }
     }
