@@ -20,15 +20,6 @@ pub struct Rect {
     pub height: u32,
 }
 
-/// Represents a size.
-#[derive(Debug, Clone, Copy)]
-pub struct Size {
-    /// Width.
-    pub width: u32,
-    /// Height.
-    pub height: u32,
-}
-
 impl Rect {
     /// Gets the x coordinate of top-left corner.
     pub const fn left(&self) -> i32 {
@@ -78,9 +69,6 @@ pub struct Group<'a> {
 pub struct Sprite {
     /// Source rectangle from the texture to draw from.
     pub src: Rect,
-
-    /// Size of the destination.
-    pub dest_size: Size,
 
     /// Transformation of the source rectangle into screen space.
     pub transform: AffineTransform,
@@ -316,11 +304,11 @@ impl Renderer {
                         ];
 
                         let (x0, y0) = s.transform.transform(0.0, 0.0);
-                        let (x1, y1) = s.transform.transform(0.0, s.dest_size.height as f32);
-                        let (x2, y2) = s.transform.transform(s.dest_size.width as f32, 0.0);
+                        let (x1, y1) = s.transform.transform(0.0, s.src.height as f32);
+                        let (x2, y2) = s.transform.transform(s.src.width as f32, 0.0);
                         let (x3, y3) = s
                             .transform
-                            .transform(s.dest_size.width as f32, s.dest_size.height as f32);
+                            .transform(s.src.width as f32, s.src.height as f32);
 
                         [
                             Vertex {

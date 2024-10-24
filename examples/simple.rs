@@ -83,10 +83,6 @@ impl Inner {
                                     width: 280 / 2,
                                     height: 210 / 2,
                                 },
-                                dest_size: spright::Size {
-                                    width: 280,
-                                    height: 210,
-                                },
                                 transform: spright::AffineTransform::IDENTITY,
                                 tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
                             },
@@ -94,10 +90,6 @@ impl Inner {
                                 src: spright::Rect {
                                     x: 0,
                                     y: 0,
-                                    width: 280,
-                                    height: 210,
-                                },
-                                dest_size: spright::Size {
                                     width: 280,
                                     height: 210,
                                 },
@@ -116,10 +108,6 @@ impl Inner {
                                 width: 386,
                                 height: 395,
                             },
-                            dest_size: spright::Size {
-                                width: 386,
-                                height: 395,
-                            },
                             transform: spright::AffineTransform::translation(200.0, 0.0)
                                 * spright::AffineTransform::scaling(2.0, 3.0),
                             tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
@@ -132,10 +120,6 @@ impl Inner {
                             src: spright::Rect {
                                 x: 0,
                                 y: 0,
-                                width: 280,
-                                height: 210,
-                            },
-                            dest_size: spright::Size {
                                 width: 280,
                                 height: 210,
                             },

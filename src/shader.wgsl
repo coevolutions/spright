@@ -41,7 +41,7 @@ fn vs_main(model: VertexInput) -> VertexOutput {
     pos.y = -pos.y;
 
     out.tex_coords = model.tex_coords;
-    out.position = vec4<f32>(pos, model.position.z, 1.0);
+    out.position = vec4<f32>(pos, 0.0, 1.0);
     return out;
 }
 
