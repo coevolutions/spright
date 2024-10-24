@@ -12,16 +12,20 @@ var<uniform> texture_size: vec2<f32>;
 struct VertexInput {
     @location(0) position: vec3<f32>,
     @location(1) tex_coords: vec2<f32>,
+    @location(2) tint: vec4<f32>,
 }
 
 struct VertexOutput {
     @builtin(position) position: vec4<f32>,
     @location(0) tex_coords: vec2<f32>,
+    @location(1) tint: vec4<f32>,
 };
 
 @vertex
 fn vs_main(model: VertexInput) -> VertexOutput {
     var out: VertexOutput;
+
+    out.tint = model.tint;
 
     // Normalize pixel texture position to texture coordinates.
     out.tex_coords = model.tex_coords / texture_size;
@@ -36,5 +40,5 @@ fn vs_main(model: VertexInput) -> VertexOutput {
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    return textureSample(t, s, in.tex_coords);
+    return textureSample(t, s, in.tex_coords) * in.tint;
 }
