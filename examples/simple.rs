@@ -80,7 +80,7 @@ impl Inner {
                 &[
                     spright::Group {
                         texture: &self.texture1,
-                        kind: spright::TextureKind::Color,
+                        texture_kind: spright::TextureKind::Color,
                         sprites: &[
                             spright::Sprite {
                                 src: spright::Rect {
@@ -89,12 +89,11 @@ impl Inner {
                                     width: 280.0 / 2.0,
                                     height: 210.0 / 2.0,
                                 },
-                                dest: spright::Rect {
-                                    x: -20.0,
-                                    y: -20.0,
-                                    width: 280.0 * 4.0,
-                                    height: 210.0 * 4.0,
+                                dest_size: spright::Size {
+                                    width: 280.0,
+                                    height: 210.0,
                                 },
+                                transform: spright::AffineTransform::identity(),
                                 tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
                             },
                             spright::Sprite {
@@ -104,19 +103,18 @@ impl Inner {
                                     width: 280.0,
                                     height: 210.0,
                                 },
-                                dest: spright::Rect {
-                                    x: 20.0,
-                                    y: 20.0,
+                                dest_size: spright::Size {
                                     width: 280.0,
                                     height: 210.0,
                                 },
+                                transform: spright::AffineTransform::identity(),
                                 tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
                             },
                         ],
                     },
                     spright::Group {
                         texture: &self.texture2,
-                        kind: spright::TextureKind::Color,
+                        texture_kind: spright::TextureKind::Color,
                         sprites: &[spright::Sprite {
                             src: spright::Rect {
                                 x: 0.0,
@@ -124,18 +122,18 @@ impl Inner {
                                 width: 386.0,
                                 height: 395.0,
                             },
-                            dest: spright::Rect {
-                                x: 30.0,
-                                y: 30.0,
-                                width: 386.0 * 4.0,
-                                height: 395.0 * 4.0,
+                            dest_size: spright::Size {
+                                width: 386.0,
+                                height: 395.0,
                             },
+                            transform: spright::AffineTransform::translation(200.0, 0.0)
+                                * spright::AffineTransform::scaling(2.0, 3.0),
                             tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
                         }],
                     },
                     spright::Group {
                         texture: &self.texture1,
-                        kind: spright::TextureKind::Color,
+                        texture_kind: spright::TextureKind::Color,
                         sprites: &[spright::Sprite {
                             src: spright::Rect {
                                 x: 0.0,
@@ -143,12 +141,14 @@ impl Inner {
                                 width: 280.0,
                                 height: 210.0,
                             },
-                            dest: spright::Rect {
-                                x: 300.0,
-                                y: 300.0,
+                            dest_size: spright::Size {
                                 width: 280.0,
                                 height: 210.0,
                             },
+                            transform: spright::AffineTransform::translation(-140.0, -105.0)
+                                * spright::AffineTransform::scaling(3.0, 3.0)
+                                * spright::AffineTransform::rotation(1.0)
+                                * spright::AffineTransform::translation(140.0 * 3.0, 105.0 * 3.0),
                             tint: spright::Color::new(0xff, 0xff, 0x00, 0x88),
                         }],
                     },
