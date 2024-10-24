@@ -1,9 +1,10 @@
 use std::sync::Arc;
 
+use image::GenericImageView;
 use spright::Renderer;
 use wgpu::{
-    Adapter, CreateSurfaceError, Device, DeviceDescriptor, PresentMode, Queue, RenderPass, Surface,
-    SurfaceConfiguration,
+    util::DeviceExt, Adapter, CreateSurfaceError, Device, DeviceDescriptor, PresentMode, Queue,
+    RenderPass, Surface, SurfaceConfiguration,
 };
 use winit::{
     application::ApplicationHandler,
@@ -45,6 +46,34 @@ struct Inner {
     texture2: wgpu::Texture,
 }
 
+fn load_texture(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    img: &image::DynamicImage,
+) -> wgpu::Texture {
+    let (width, height) = img.dimensions();
+
+    device.create_texture_with_data(
+        queue,
+        &wgpu::TextureDescriptor {
+            label: None,
+            size: wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba8UnormSrgb,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[],
+        },
+        wgpu::util::TextureDataOrder::default(),
+        &img.to_rgba8(),
+    )
+}
+
 impl Inner {
     fn new(gfx: &Graphics) -> Self {
         let spright_renderer = Renderer::new(
@@ -53,12 +82,12 @@ impl Inner {
         );
         Self {
             spright_renderer,
-            texture1: spright::texture::load(
+            texture1: load_texture(
                 &gfx.device,
                 &gfx.queue,
                 &image::load_from_memory(include_bytes!("test.png")).unwrap(),
             ),
-            texture2: spright::texture::load(
+            texture2: load_texture(
                 &gfx.device,
                 &gfx.queue,
                 &image::load_from_memory(include_bytes!("test2.png")).unwrap(),

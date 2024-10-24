@@ -1,4 +1,3 @@
-pub mod texture;
 mod transform;
 
 use crevice::std140::*;
