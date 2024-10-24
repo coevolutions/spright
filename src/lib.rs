@@ -315,36 +315,43 @@ impl Renderer {
                             s.tint.a as f32 / 255.0,
                         ];
 
-                        let Vec2 { x: x0, y: y0 } =
-                            s.transform.transform_point2(Vec2::new(0.0, 0.0));
-                        let Vec2 { x: x1, y: y1 } = s
-                            .transform
-                            .transform_point2(Vec2::new(0.0, s.src.size.y as f32));
-                        let Vec2 { x: x2, y: y2 } = s
-                            .transform
-                            .transform_point2(Vec2::new(s.src.size.x as f32, 0.0));
-                        let Vec2 { x: x3, y: y3 } = s
-                            .transform
-                            .transform_point2(Vec2::new(s.src.size.x as f32, s.src.size.y as f32));
-
                         [
                             Vertex {
-                                position: [x0, y0, 0.0],
+                                position: s
+                                    .transform
+                                    .transform_point2(Vec2::new(0.0, 0.0))
+                                    .extend(0.0)
+                                    .to_array(),
                                 tex_coords: [s.src.left() as f32, s.src.top() as f32],
                                 tint,
                             },
                             Vertex {
-                                position: [x1, y1, 0.0],
+                                position: s
+                                    .transform
+                                    .transform_point2(Vec2::new(0.0, s.src.size.y as f32))
+                                    .extend(0.0)
+                                    .to_array(),
                                 tex_coords: [s.src.left() as f32, s.src.bottom() as f32],
                                 tint,
                             },
                             Vertex {
-                                position: [x2, y2, 0.0],
+                                position: s
+                                    .transform
+                                    .transform_point2(Vec2::new(s.src.size.x as f32, 0.0))
+                                    .extend(0.0)
+                                    .to_array(),
                                 tex_coords: [s.src.right() as f32, s.src.top() as f32],
                                 tint,
                             },
                             Vertex {
-                                position: [x3, y3, 0.0],
+                                position: s
+                                    .transform
+                                    .transform_point2(Vec2::new(
+                                        s.src.size.x as f32,
+                                        s.src.size.y as f32,
+                                    ))
+                                    .extend(0.0)
+                                    .to_array(),
                                 tex_coords: [s.src.right() as f32, s.src.bottom() as f32],
                                 tint,
                             },
