@@ -37,6 +37,15 @@ impl Rect {
     }
 }
 
+/// Represents a group of sprites from the same texture.
+pub struct Group<'a> {
+    /// The texture to draw from.
+    pub texture: &'a wgpu::Texture,
+
+    /// The sprites to draw.
+    pub sprites: &'a [Sprite],
+}
+
 /// Represents a chunk of the texture to draw.
 pub struct Sprite {
     /// Source rectangle from the texture to draw from.
@@ -46,13 +55,17 @@ pub struct Sprite {
     pub dest: Rect,
 }
 
-/// Prepared data to draw with.
-pub struct PerFrameData {
+struct PreparedGroup {
     texture_bind_group: wgpu::BindGroup,
     uniforms_bind_group: wgpu::BindGroup,
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
     num_indices: u32,
+}
+
+/// Prepared data to draw with.
+pub struct PerFrameData {
+    groups: Vec<PreparedGroup>,
 }
 
 /// Encapsulates static state for rendering.
@@ -184,13 +197,13 @@ impl Renderer {
     }
 
     /// Prepares sprites for rendering.
-    pub fn prepare(
+    fn prepare_one(
         &self,
         device: &wgpu::Device,
         screen_size: [f32; 2],
         texture: &wgpu::Texture,
         sprites: &[Sprite],
-    ) -> PerFrameData {
+    ) -> PreparedGroup {
         let texture_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("spright: texture_bind_group"),
             layout: &self.texture_bind_group_layout,
@@ -274,12 +287,26 @@ impl Renderer {
             usage: wgpu::BufferUsages::INDEX,
         });
 
-        PerFrameData {
+        PreparedGroup {
             texture_bind_group,
             uniforms_bind_group,
             vertex_buffer,
             index_buffer,
             num_indices: indices.len() as u32,
+        }
+    }
+
+    pub fn prepare(
+        &self,
+        device: &wgpu::Device,
+        screen_size: [f32; 2],
+        groups: &[Group],
+    ) -> PerFrameData {
+        PerFrameData {
+            groups: groups
+                .iter()
+                .map(|g| self.prepare_one(device, screen_size, g.texture, &g.sprites))
+                .collect::<Vec<_>>(),
         }
     }
 
@@ -290,13 +317,12 @@ impl Renderer {
         per_frame_data: &'rpass PerFrameData,
     ) {
         rpass.set_pipeline(&self.render_pipeline);
-        rpass.set_vertex_buffer(0, per_frame_data.vertex_buffer.slice(..));
-        rpass.set_index_buffer(
-            per_frame_data.index_buffer.slice(..),
-            wgpu::IndexFormat::Uint16,
-        );
-        rpass.set_bind_group(0, &per_frame_data.texture_bind_group, &[]);
-        rpass.set_bind_group(1, &per_frame_data.uniforms_bind_group, &[]);
-        rpass.draw_indexed(0..per_frame_data.num_indices, 0, 0..1);
+        for g in per_frame_data.groups.iter() {
+            rpass.set_vertex_buffer(0, g.vertex_buffer.slice(..));
+            rpass.set_index_buffer(g.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+            rpass.set_bind_group(0, &g.texture_bind_group, &[]);
+            rpass.set_bind_group(1, &g.uniforms_bind_group, &[]);
+            rpass.draw_indexed(0..g.num_indices, 0, 0..1);
+        }
     }
 }
