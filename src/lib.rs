@@ -114,14 +114,8 @@ impl DynamicBuffer {
         }
     }
 
-    fn write(
-        &mut self,
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
-        offset: wgpu::BufferAddress,
-        data: &[u8],
-    ) {
-        let size = offset + data.len() as u64;
+    fn write(&mut self, device: &wgpu::Device, queue: &wgpu::Queue, data: &[u8]) {
+        let size = data.len() as u64;
         if self.inner.size() < size {
             let mut old = device.create_buffer(&wgpu::BufferDescriptor {
                 label: self.label.as_ref().map(|v| v.as_str()),
@@ -131,18 +125,12 @@ impl DynamicBuffer {
             });
             std::mem::swap(&mut old, &mut self.inner);
             {
-                let mut view = self.inner.slice(offset..).get_mapped_range_mut();
+                let mut view = self.inner.slice(..).get_mapped_range_mut();
                 view.copy_from_slice(data);
             }
             self.inner.unmap();
-            if offset > 0 {
-                let mut enc =
-                    device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-                enc.copy_buffer_to_buffer(&old, 0, &mut self.inner, 0, offset);
-                queue.submit(Some(enc.finish()));
-            }
         } else {
-            queue.write_buffer(&self.inner, offset, data);
+            queue.write_buffer(&self.inner, 0, data);
         }
     }
 }
@@ -369,7 +357,7 @@ impl Renderer {
                 .unwrap();
         }
         self.texture_uniforms_buffer
-            .write(device, queue, 0, &texture_uniforms_buffer.into_inner());
+            .write(device, queue, &texture_uniforms_buffer.into_inner());
 
         let mut vertices = vec![];
         let mut indices = vec![];
@@ -468,9 +456,9 @@ impl Renderer {
         }
 
         self.vertex_buffer
-            .write(device, queue, 0, bytemuck::cast_slice(&vertices[..]));
+            .write(device, queue, bytemuck::cast_slice(&vertices[..]));
         self.index_buffer
-            .write(device, queue, 0, bytemuck::cast_slice(&indices[..]));
+            .write(device, queue, bytemuck::cast_slice(&indices[..]));
     }
 
     /// Renders prepared sprites.
