@@ -123,15 +123,22 @@ impl DynamicBuffer {
     ) {
         let size = offset + data.len() as u64;
         if self.inner.size() < size {
-            self.inner = device.create_buffer(&wgpu::BufferDescriptor {
+            let mut old = device.create_buffer(&wgpu::BufferDescriptor {
                 label: self.label.as_ref().map(|v| v.as_str()),
                 size,
                 usage: self.inner.usage(),
                 mapped_at_creation: true,
             });
+            std::mem::swap(&mut old, &mut self.inner);
             {
                 let mut view = self.inner.slice(offset..).get_mapped_range_mut();
                 view.copy_from_slice(data);
+            }
+            if offset > 0 {
+                let mut enc =
+                    device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+                enc.copy_buffer_to_buffer(&old, 0, &mut self.inner, 0, offset);
+                queue.submit(Some(enc.finish()));
             }
             self.inner.unmap();
         } else {
