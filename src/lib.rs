@@ -65,10 +65,10 @@ pub struct Renderer {
     texture_bind_group_layout: wgpu::BindGroupLayout,
     target_uniforms_buffer: wgpu::Buffer,
     target_uniforms_bind_group: wgpu::BindGroup,
-    texture_uniforms_buffer: wgpu::Buffer,
+    texture_uniforms_buffer: DynamicBuffer,
     prepared_groups: Vec<PreparedGroup>,
-    vertex_buffer: wgpu::Buffer,
-    index_buffer: wgpu::Buffer,
+    vertex_buffer: DynamicBuffer,
+    index_buffer: DynamicBuffer,
     sampler: wgpu::Sampler,
 }
 
@@ -101,21 +101,51 @@ impl Vertex {
     };
 }
 
-fn ensure_buffer_size(
-    buffer: &mut wgpu::Buffer,
-    label: Option<&str>,
-    device: &wgpu::Device,
-    size: u64,
-) {
-    if buffer.size() >= size {
-        return;
+struct DynamicBuffer {
+    inner: wgpu::Buffer,
+    label: Option<String>,
+}
+
+impl DynamicBuffer {
+    fn new(device: &wgpu::Device, desc: &wgpu::BufferDescriptor) -> Self {
+        Self {
+            inner: device.create_buffer(desc),
+            label: desc.label.map(|v| v.to_string()),
+        }
     }
-    *buffer = device.create_buffer(&wgpu::BufferDescriptor {
-        label,
-        size,
-        usage: buffer.usage(),
-        mapped_at_creation: false,
-    })
+
+    fn write(
+        &mut self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        offset: wgpu::BufferAddress,
+        data: &[u8],
+    ) {
+        let size = offset + data.len() as u64;
+        if self.inner.size() < size {
+            self.inner = device.create_buffer(&wgpu::BufferDescriptor {
+                label: self.label.as_ref().map(|v| v.as_str()),
+                size,
+                usage: self.inner.usage(),
+                mapped_at_creation: true,
+            });
+            {
+                let mut view = self.inner.slice(offset..).get_mapped_range_mut();
+                view.copy_from_slice(data);
+            }
+            self.inner.unmap();
+        } else {
+            queue.write_buffer(&self.inner, offset, data);
+        }
+    }
+}
+
+impl std::ops::Deref for DynamicBuffer {
+    type Target = wgpu::Buffer;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
 }
 
 struct PreparedGroup {
@@ -176,12 +206,15 @@ impl Renderer {
                 }],
             });
 
-        let texture_uniforms_buffer = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("spright: texture_uniforms_buffer"),
-            size: TextureUniforms::SHADER_SIZE.into(),
-            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
+        let texture_uniforms_buffer = DynamicBuffer::new(
+            &device,
+            &wgpu::BufferDescriptor {
+                label: Some("spright: texture_uniforms_buffer"),
+                size: TextureUniforms::SHADER_SIZE.into(),
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                mapped_at_creation: false,
+            },
+        );
 
         let target_uniforms_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("spright: target_uniforms_buffer"),
@@ -199,19 +232,25 @@ impl Renderer {
             }],
         });
 
-        let vertex_buffer = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("spright: vertex_buffer"),
-            size: std::mem::size_of::<Vertex>() as u64 * 1024,
-            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
+        let vertex_buffer = DynamicBuffer::new(
+            &device,
+            &wgpu::BufferDescriptor {
+                label: Some("spright: vertex_buffer"),
+                size: std::mem::size_of::<Vertex>() as u64 * 1024,
+                usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+                mapped_at_creation: false,
+            },
+        );
 
-        let index_buffer = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("spright: vertex_buffer"),
-            size: std::mem::size_of::<u32>() as u64 * 1024,
-            usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
+        let index_buffer = DynamicBuffer::new(
+            &device,
+            &wgpu::BufferDescriptor {
+                label: Some("spright: vertex_buffer"),
+                size: std::mem::size_of::<u32>() as u64 * 1024,
+                usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
+                mapped_at_creation: false,
+            },
+        );
 
         Self {
             render_pipeline: device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
@@ -322,18 +361,8 @@ impl Renderer {
                 })
                 .unwrap();
         }
-        let texture_uniforms_buffer = texture_uniforms_buffer.into_inner();
-        ensure_buffer_size(
-            &mut self.texture_uniforms_buffer,
-            Some("spright: texture_uniforms_buffer"),
-            device,
-            texture_uniforms_buffer.len() as u64,
-        );
-        queue.write_buffer(
-            &mut self.texture_uniforms_buffer,
-            0,
-            &texture_uniforms_buffer,
-        );
+        self.texture_uniforms_buffer
+            .write(device, queue, 0, &texture_uniforms_buffer.into_inner());
 
         let mut vertices = vec![];
         let mut indices = vec![];
@@ -431,29 +460,10 @@ impl Renderer {
             });
         }
 
-        ensure_buffer_size(
-            &mut self.vertex_buffer,
-            Some("spright: vertex_buffer"),
-            device,
-            bytemuck::cast_slice::<_, u8>(&vertices[..]).len() as u64,
-        );
-        queue.write_buffer(
-            &mut self.vertex_buffer,
-            0,
-            bytemuck::cast_slice(&vertices[..]),
-        );
-
-        ensure_buffer_size(
-            &mut self.index_buffer,
-            Some("spright: index_buffer"),
-            device,
-            bytemuck::cast_slice::<_, u8>(&indices[..]).len() as u64,
-        );
-        queue.write_buffer(
-            &mut self.index_buffer,
-            0,
-            bytemuck::cast_slice(&indices[..]),
-        );
+        self.vertex_buffer
+            .write(device, queue, 0, bytemuck::cast_slice(&vertices[..]));
+        self.index_buffer
+            .write(device, queue, 0, bytemuck::cast_slice(&indices[..]));
     }
 
     /// Renders prepared sprites.
