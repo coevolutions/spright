@@ -1,4 +1,4 @@
-use crevice::std140::AsStd140;
+use encase::{DynamicUniformBuffer, ShaderSize, ShaderType, UniformBuffer};
 use glam::*;
 use itertools::Itertools as _;
 
@@ -81,14 +81,14 @@ struct Vertex {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, AsStd140)]
+#[derive(Copy, Clone, Debug, ShaderType)]
 struct TextureUniforms {
     size: Vec3,
     is_mask: u32,
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, AsStd140)]
+#[derive(Copy, Clone, Debug, ShaderType)]
 struct TargetUniforms {
     size: Vec3,
 }
@@ -178,14 +178,14 @@ impl Renderer {
 
         let texture_uniforms_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("spright: texture_uniforms_buffer"),
-            size: std::mem::size_of::<Std140TextureUniforms>() as u64,
+            size: TextureUniforms::SHADER_SIZE.into(),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
 
         let target_uniforms_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("spright: target_uniforms_buffer"),
-            size: std::mem::size_of::<Std140TargetUniforms>() as u64,
+            size: TargetUniforms::SHADER_SIZE.into(),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
@@ -274,23 +274,22 @@ impl Renderer {
         target_size: wgpu::Extent3d,
         sprites: &[Sprite<'_>],
     ) {
-        queue.write_buffer(
-            &self.target_uniforms_buffer,
-            0,
-            TargetUniforms {
-                size: Vec3 {
-                    x: target_size.width as f32,
-                    y: target_size.height as f32,
-                    z: 0.0,
-                },
-            }
-            .as_std140()
-            .as_bytes(),
-        );
+        queue.write_buffer(&self.target_uniforms_buffer, 0, &{
+            let mut buffer = UniformBuffer::new(vec![]);
+            buffer
+                .write(&TargetUniforms {
+                    size: Vec3 {
+                        x: target_size.width as f32,
+                        y: target_size.height as f32,
+                        z: 0.0,
+                    },
+                })
+                .unwrap();
+            buffer.into_inner()
+        });
 
         self.prepared_groups.clear();
 
-        let mut texture_uniforms = vec![];
         let min_uniform_buffer_offset_alignment =
             device.limits().min_uniform_buffer_offset_alignment;
 
@@ -301,11 +300,15 @@ impl Renderer {
             .map(|(_, chunk)| chunk.collect::<Vec<_>>())
             .collect::<Vec<_>>();
 
+        let mut texture_uniforms_buffer = DynamicUniformBuffer::new_with_alignment(
+            vec![],
+            min_uniform_buffer_offset_alignment as u64,
+        );
         for sprites in grouped.iter() {
             let texture = sprites.first().unwrap().texture;
 
-            texture_uniforms.extend(
-                TextureUniforms {
+            texture_uniforms_buffer
+                .write(&TextureUniforms {
                     size: Vec3 {
                         x: texture.width() as f32,
                         y: texture.height() as f32,
@@ -316,25 +319,20 @@ impl Renderer {
                     } else {
                         0
                     },
-                }
-                .as_std140()
-                .as_bytes()
-                .into_iter()
-                .cloned()
-                .chain(std::iter::repeat(0))
-                .take(min_uniform_buffer_offset_alignment as usize),
-            );
+                })
+                .unwrap();
         }
+        let texture_uniforms_buffer = texture_uniforms_buffer.into_inner();
         ensure_buffer_size(
             &mut self.texture_uniforms_buffer,
             Some("spright: texture_uniforms_buffer"),
             device,
-            bytemuck::cast_slice::<_, u8>(&texture_uniforms[..]).len() as u64,
+            texture_uniforms_buffer.len() as u64,
         );
         queue.write_buffer(
             &mut self.texture_uniforms_buffer,
             0,
-            bytemuck::cast_slice::<_, u8>(&texture_uniforms[..]),
+            &texture_uniforms_buffer,
         );
 
         let mut vertices = vec![];
@@ -423,12 +421,7 @@ impl Renderer {
                             resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
                                 buffer: &self.texture_uniforms_buffer,
                                 offset: (i * min_uniform_buffer_offset_alignment as usize) as u64,
-                                size: Some(
-                                    std::num::NonZero::new(
-                                        min_uniform_buffer_offset_alignment as u64,
-                                    )
-                                    .unwrap(),
-                                ),
+                                size: Some(TextureUniforms::SHADER_SIZE),
                             }),
                         },
                     ],

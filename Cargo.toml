@@ -10,7 +10,7 @@ repository = "https://github.com/teenygame/spright"
 wgpu = "22.1.0"
 bytemuck = { version = "1.16", features = ["derive"] }
 rgb = "0.8.50"
-crevice = { version = "0.17.0", features = ["glam"] }
+encase = { version = "0.10.0", features = ["glam"] }
 glam = "0.29.0"
 itertools = "0.13.0"
 
