@@ -134,13 +134,13 @@ impl DynamicBuffer {
                 let mut view = self.inner.slice(offset..).get_mapped_range_mut();
                 view.copy_from_slice(data);
             }
+            self.inner.unmap();
             if offset > 0 {
                 let mut enc =
                     device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
                 enc.copy_buffer_to_buffer(&old, 0, &mut self.inner, 0, offset);
                 queue.submit(Some(enc.finish()));
             }
-            self.inner.unmap();
         } else {
             queue.write_buffer(&self.inner, offset, data);
         }
