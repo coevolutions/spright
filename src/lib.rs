@@ -114,16 +114,21 @@ impl DynamicBuffer {
         }
     }
 
+    fn reallocate(&mut self, device: &wgpu::Device, size: wgpu::BufferAddress) -> wgpu::Buffer {
+        let mut old = device.create_buffer(&wgpu::BufferDescriptor {
+            label: self.label.as_ref().map(|v| v.as_str()),
+            size,
+            usage: self.inner.usage(),
+            mapped_at_creation: true,
+        });
+        std::mem::swap(&mut old, &mut self.inner);
+        old
+    }
+
     fn write(&mut self, device: &wgpu::Device, queue: &wgpu::Queue, data: &[u8]) {
         let size = data.len() as u64;
         if self.inner.size() < size {
-            let mut old = device.create_buffer(&wgpu::BufferDescriptor {
-                label: self.label.as_ref().map(|v| v.as_str()),
-                size,
-                usage: self.inner.usage(),
-                mapped_at_creation: true,
-            });
-            std::mem::swap(&mut old, &mut self.inner);
+            self.reallocate(device, size);
             {
                 let mut view = self.inner.slice(..).get_mapped_range_mut();
                 view.copy_from_slice(data);
