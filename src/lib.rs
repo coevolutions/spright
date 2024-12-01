@@ -4,55 +4,42 @@ use itertools::Itertools as _;
 
 pub type Color = rgb::RGBA8;
 
-/// Represents a rectangle.
 #[derive(Debug, Clone, Copy)]
-pub struct Rect {
-    /// Offset of the rectangle.
-    pub offset: IVec2,
-    /// Size of the rectangle.
-    pub size: UVec2,
+struct Rect {
+    offset: IVec2,
+    size: UVec2,
 }
 
 impl Rect {
-    /// Creates a new rectangle.
-    pub fn new(x: i32, y: i32, width: u32, height: u32) -> Self {
+    fn new(x: i32, y: i32, width: u32, height: u32) -> Self {
         Self {
             offset: IVec2::new(x, y),
             size: UVec2::new(width, height),
         }
     }
 
-    /// Gets the x coordinate of top-left corner.
-    pub const fn left(&self) -> i32 {
+    const fn left(&self) -> i32 {
         self.offset.x
     }
 
-    /// Gets the y coordinate of top-left corner.
-    pub const fn top(&self) -> i32 {
+    const fn top(&self) -> i32 {
         self.offset.y
     }
 
-    /// Gets the x coordinate of bottom-right corner.
-    pub const fn right(&self) -> i32 {
+    const fn right(&self) -> i32 {
         self.offset.x + self.size.x as i32
     }
 
-    /// Gets the y coordinate of bottom-right corner.
-    pub const fn bottom(&self) -> i32 {
+    const fn bottom(&self) -> i32 {
         self.offset.y + self.size.y as i32
     }
 }
 
 /// Represents a slice of a texture to draw.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct TextureSlice<'a> {
-    /// The texture to draw from.
     texture: &'a wgpu::Texture,
-
-    /// Layer of the texture to draw from.
     layer: u32,
-
-    /// Source rectangle from the texture to draw from.
     rect: Rect,
 }
 
