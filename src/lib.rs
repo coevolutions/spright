@@ -45,13 +45,17 @@ pub struct TextureSlice<'a> {
 
 impl<'a> TextureSlice<'a> {
     /// Creates a new texture slice from a raw texture.
-    pub fn new(texture: &'a wgpu::Texture, layer: u32) -> Self {
+    pub fn from_layer(texture: &'a wgpu::Texture, layer: u32) -> Option<Self> {
         let size = texture.size();
-        Self {
+        if layer >= size.depth_or_array_layers {
+            return None;
+        }
+
+        Some(Self {
             texture,
             layer,
             rect: Rect::new(0, 0, size.width, size.height),
-        }
+        })
     }
 
     /// Slices the texture slice.

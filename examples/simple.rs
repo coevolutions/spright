@@ -98,21 +98,24 @@ impl Inner {
             target_size,
             &[
                 spright::Sprite {
-                    slice: spright::TextureSlice::new(&self.texture1, 0)
+                    slice: spright::TextureSlice::from_layer(&self.texture1, 0)
+                        .unwrap()
                         .slice(glam::ivec2(0, 0), glam::uvec2(280 / 2, 210 / 2))
                         .unwrap(),
                     transform: glam::Affine2::IDENTITY,
                     tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
                 },
                 spright::Sprite {
-                    slice: spright::TextureSlice::new(&self.texture1, 0)
+                    slice: spright::TextureSlice::from_layer(&self.texture1, 0)
+                        .unwrap()
                         .slice(glam::ivec2(0, 0), glam::uvec2(280, 210))
                         .unwrap(),
                     transform: glam::Affine2::from_translation(glam::vec2(100.0, 100.0)),
                     tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
                 },
                 spright::Sprite {
-                    slice: spright::TextureSlice::new(&self.texture2, 0)
+                    slice: spright::TextureSlice::from_layer(&self.texture2, 0)
+                        .unwrap()
                         .slice(glam::ivec2(0, 0), glam::uvec2(386, 395))
                         .unwrap(),
                     transform: glam::Affine2::from_scale(glam::Vec2::new(2.0, 3.0))
@@ -120,7 +123,8 @@ impl Inner {
                     tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
                 },
                 spright::Sprite {
-                    slice: spright::TextureSlice::new(&self.texture1, 0)
+                    slice: spright::TextureSlice::from_layer(&self.texture1, 0)
+                        .unwrap()
                         .slice(glam::ivec2(0, 0), glam::uvec2(280, 210))
                         .unwrap(),
                     transform: glam::Affine2::from_translation(glam::Vec2::new(
