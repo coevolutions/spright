@@ -49,6 +49,9 @@ pub struct Sprite<'a> {
     /// The texture to draw from.
     pub texture: &'a wgpu::Texture,
 
+    /// Layer of the texture to draw from.
+    pub layer: u32,
+
     /// Source rectangle from the texture to draw from.
     pub src: Rect,
 
@@ -77,6 +80,7 @@ pub struct Renderer {
 struct Vertex {
     position: [f32; 3],
     tex_coords: [f32; 2],
+    layer: u32,
     tint: [f32; 4],
 }
 
@@ -97,7 +101,7 @@ impl Vertex {
     const BUFFER_LAYOUT: wgpu::VertexBufferLayout<'static> = wgpu::VertexBufferLayout {
         array_stride: std::mem::size_of::<Self>() as wgpu::BufferAddress,
         step_mode: wgpu::VertexStepMode::Vertex,
-        attributes: &wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x2, 2 => Float32x4],
+        attributes: &wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x2, 2=> Uint32, 3 => Float32x4],
     };
 }
 
@@ -167,7 +171,7 @@ impl Renderer {
                         visibility: wgpu::ShaderStages::FRAGMENT,
                         ty: wgpu::BindingType::Texture {
                             multisampled: false,
-                            view_dimension: wgpu::TextureViewDimension::D2,
+                            view_dimension: wgpu::TextureViewDimension::D2Array,
                             sample_type: wgpu::TextureSampleType::Float { filterable: true },
                         },
                         count: None,
@@ -268,13 +272,13 @@ impl Renderer {
                 ),
                 vertex: wgpu::VertexState {
                     module: &shader,
-                    entry_point: "vs_main",
+                    entry_point: Some("vs_main"),
                     buffers: &[Vertex::BUFFER_LAYOUT],
                     compilation_options: Default::default(),
                 },
                 fragment: Some(wgpu::FragmentState {
                     module: &shader,
-                    entry_point: "fs_main",
+                    entry_point: Some("fs_main"),
                     compilation_options: Default::default(),
                     targets: &[Some(wgpu::ColorTargetState {
                         format: texture_format,
@@ -334,7 +338,7 @@ impl Renderer {
 
         let grouped = sprites
             .iter()
-            .chunk_by(|s| s.texture.global_id())
+            .chunk_by(|s| s.texture)
             .into_iter()
             .map(|(_, chunk)| chunk.collect::<Vec<_>>())
             .collect::<Vec<_>>();
@@ -390,6 +394,7 @@ impl Renderer {
                             .extend(0.0)
                             .to_array(),
                         tex_coords: [s.src.left() as f32, s.src.top() as f32],
+                        layer: s.layer,
                         tint,
                     },
                     Vertex {
@@ -399,6 +404,7 @@ impl Renderer {
                             .extend(0.0)
                             .to_array(),
                         tex_coords: [s.src.left() as f32, s.src.bottom() as f32],
+                        layer: s.layer,
                         tint,
                     },
                     Vertex {
@@ -408,6 +414,7 @@ impl Renderer {
                             .extend(0.0)
                             .to_array(),
                         tex_coords: [s.src.right() as f32, s.src.top() as f32],
+                        layer: s.layer,
                         tint,
                     },
                     Vertex {
@@ -417,6 +424,7 @@ impl Renderer {
                             .extend(0.0)
                             .to_array(),
                         tex_coords: [s.src.right() as f32, s.src.bottom() as f32],
+                        layer: s.layer,
                         tint,
                     },
                 ]);
@@ -437,9 +445,12 @@ impl Renderer {
                     entries: &[
                         wgpu::BindGroupEntry {
                             binding: 0,
-                            resource: wgpu::BindingResource::TextureView(
-                                &texture.create_view(&wgpu::TextureViewDescriptor::default()),
-                            ),
+                            resource: wgpu::BindingResource::TextureView(&texture.create_view(
+                                &wgpu::TextureViewDescriptor {
+                                    dimension: Some(wgpu::TextureViewDimension::D2Array),
+                                    ..Default::default()
+                                },
+                            )),
                         },
                         wgpu::BindGroupEntry {
                             binding: 1,

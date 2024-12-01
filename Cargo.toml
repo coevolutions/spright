@@ -1,13 +1,13 @@
 [package]
 name = "spright"
-version = "0.12.0"
+version = "0.13.0"
 edition = "2021"
 description = "Simple sprite renderer for wgpu"
 license = "LGPL-3.0-or-later"
 repository = "https://github.com/teenygame/spright"
 
 [dependencies]
-wgpu = "22.1.0"
+wgpu = "23.0.1"
 bytemuck = { version = "1.16", features = ["derive"] }
 rgb = "0.8.50"
 encase = { version = "0.10.0", features = ["glam"] }

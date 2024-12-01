@@ -1,5 +1,5 @@
 @group(0) @binding(0)
-var t: texture_2d<f32>;
+var t: texture_2d_array<f32>;
 @group(0) @binding(1)
 var s: sampler;
 
@@ -21,7 +21,8 @@ var<uniform> target_uniforms: TargetUniforms;
 struct VertexInput {
     @location(0) position: vec3<f32>,
     @location(1) tex_coords: vec2<f32>,
-    @location(2) tint: vec4<f32>,
+    @location(2) layer: u32,
+    @location(3) tint: vec4<f32>,
 }
 
 struct VertexOutput {
@@ -47,7 +48,7 @@ fn vs_main(model: VertexInput) -> VertexOutput {
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    var sample = textureSample(t, s, in.tex_coords / texture_uniforms.size.xy);
+    var sample = textureSample(t, s, in.tex_coords / texture_uniforms.size.xy, 0);
     if texture_uniforms.is_mask == 1 {
         sample = vec4(1.0, 1.0, 1.0, sample.r);
     }
