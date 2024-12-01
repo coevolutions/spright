@@ -98,31 +98,31 @@ impl Inner {
             target_size,
             &[
                 spright::Sprite {
-                    texture: &self.texture1,
-                    layer: 0,
-                    src: spright::Rect::new(0, 0, 280 / 2, 210 / 2),
+                    slice: spright::TextureSlice::new(&self.texture1, 0)
+                        .slice(glam::ivec2(0, 0), glam::uvec2(280 / 2, 210 / 2))
+                        .unwrap(),
                     transform: glam::Affine2::IDENTITY,
                     tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
                 },
                 spright::Sprite {
-                    texture: &self.texture1,
-                    layer: 0,
-                    src: spright::Rect::new(0, 0, 280, 210),
+                    slice: spright::TextureSlice::new(&self.texture1, 0)
+                        .slice(glam::ivec2(0, 0), glam::uvec2(280, 210))
+                        .unwrap(),
                     transform: glam::Affine2::from_translation(glam::vec2(100.0, 100.0)),
                     tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
                 },
                 spright::Sprite {
-                    texture: &self.texture2,
-                    layer: 0,
-                    src: spright::Rect::new(0, 0, 386, 395),
+                    slice: spright::TextureSlice::new(&self.texture2, 0)
+                        .slice(glam::ivec2(0, 0), glam::uvec2(386, 395))
+                        .unwrap(),
                     transform: glam::Affine2::from_scale(glam::Vec2::new(2.0, 3.0))
                         * glam::Affine2::from_translation(glam::Vec2::new(200.0, 0.0)),
                     tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
                 },
                 spright::Sprite {
-                    texture: &self.texture1,
-                    layer: 0,
-                    src: spright::Rect::new(0, 0, 280, 210),
+                    slice: spright::TextureSlice::new(&self.texture1, 0)
+                        .slice(glam::ivec2(0, 0), glam::uvec2(280, 210))
+                        .unwrap(),
                     transform: glam::Affine2::from_translation(glam::Vec2::new(
                         140.0 * 3.0,
                         105.0 * 3.0,
