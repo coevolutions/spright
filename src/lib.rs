@@ -398,11 +398,7 @@ impl Renderer {
                         y: texture.height() as f32,
                         z: 0.0,
                     },
-                    is_mask: if texture.format() == wgpu::TextureFormat::R8Unorm {
-                        1
-                    } else {
-                        0
-                    },
+                    is_mask: (texture.format() == wgpu::TextureFormat::R8Unorm) as u32,
                 })
                 .unwrap();
         }

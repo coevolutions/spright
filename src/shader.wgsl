@@ -28,7 +28,8 @@ struct VertexInput {
 struct VertexOutput {
     @builtin(position) position: vec4<f32>,
     @location(0) tex_coords: vec2<f32>,
-    @location(1) tint: vec4<f32>,
+    @location(1) layer: u32,
+    @location(2) tint: vec4<f32>,
 };
 
 @vertex
@@ -42,13 +43,14 @@ fn vs_main(model: VertexInput) -> VertexOutput {
     pos.y = -pos.y;
 
     out.tex_coords = model.tex_coords;
+    out.layer = model.layer;
     out.position = vec4<f32>(pos, 0.0, 1.0);
     return out;
 }
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    var sample = textureSample(t, s, in.tex_coords / texture_uniforms.size.xy, 0);
+    var sample = textureSample(t, s, in.tex_coords / texture_uniforms.size.xy, in.layer);
     if texture_uniforms.is_mask == 1 {
         sample = vec4(1.0, 1.0, 1.0, sample.r);
     }
