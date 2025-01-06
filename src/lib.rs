@@ -1,102 +1,31 @@
 use encase::{DynamicUniformBuffer, ShaderSize, ShaderType, UniformBuffer};
 use glam::*;
-use itertools::Itertools as _;
 
 pub type Color = rgb::RGBA8;
 
-#[derive(Debug, Clone, Copy)]
-struct Rect {
-    offset: IVec2,
-    size: UVec2,
-}
+/// Represents a group of sprites to draw from the same texture.
+#[derive(Debug, Clone)]
+pub struct Group<'a> {
+    /// Texture to draw with.
+    pub texture: &'a wgpu::Texture,
 
-impl Rect {
-    fn new(x: i32, y: i32, width: u32, height: u32) -> Self {
-        Self {
-            offset: IVec2::new(x, y),
-            size: UVec2::new(width, height),
-        }
-    }
-
-    const fn left(&self) -> i32 {
-        self.offset.x
-    }
-
-    const fn top(&self) -> i32 {
-        self.offset.y
-    }
-
-    const fn right(&self) -> i32 {
-        self.offset.x + self.size.x as i32
-    }
-
-    const fn bottom(&self) -> i32 {
-        self.offset.y + self.size.y as i32
-    }
-}
-
-/// Represents a slice of a texture to draw.
-#[derive(Debug, Clone, Copy)]
-pub struct TextureSlice<'a> {
-    texture: &'a wgpu::Texture,
-    layer: u32,
-    rect: Rect,
-}
-
-impl<'a> TextureSlice<'a> {
-    /// Creates a new texture slice from a raw texture.
-    pub fn from_layer(texture: &'a wgpu::Texture, layer: u32) -> Option<Self> {
-        let size = texture.size();
-        if layer >= size.depth_or_array_layers {
-            return None;
-        }
-
-        Some(Self {
-            texture,
-            layer,
-            rect: Rect::new(0, 0, size.width, size.height),
-        })
-    }
-
-    /// Slices the texture slice.
-    ///
-    /// Note that `offset` represents an offset into the slice and not into the overall texture -- the returned slice's offset will be the current offset + new offset.
-    ///
-    /// Returns [`None`] if the slice goes out of bounds.
-    pub fn slice(&self, offset: glam::IVec2, size: glam::UVec2) -> Option<Self> {
-        let rect = Rect {
-            offset: self.rect.offset + offset,
-            size,
-        };
-
-        if rect.left() < self.rect.left()
-            || rect.right() > self.rect.right()
-            || rect.top() < self.rect.top()
-            || rect.bottom() > self.rect.bottom()
-        {
-            return None;
-        }
-
-        Some(Self {
-            texture: self.texture,
-            layer: self.layer,
-            rect,
-        })
-    }
-
-    /// Gets the size of the texture slice.
-    pub fn size(&self) -> glam::UVec2 {
-        self.rect.size
-    }
+    /// Items in the group.
+    pub items: Vec<Item>,
 }
 
 /// Represents a sprite to draw.
 #[derive(Debug, Clone)]
-pub struct Sprite<'a> {
-    /// The slice of texture to draw from.
-    pub slice: TextureSlice<'a>,
+pub struct Item {
+    /// Source offset from the texture.
+    pub src_offset: IVec2,
 
-    /// Transformation of the source rectangle into screen space.
+    /// Source size.
+    pub src_size: UVec2,
+
+    /// Source layer.
+    pub src_layer: u32,
+
+    /// Target transform.
     pub transform: Affine2,
 
     /// Tint.
@@ -356,7 +285,7 @@ impl Renderer {
         device: &wgpu::Device,
         queue: &wgpu::Queue,
         target_size: wgpu::Extent3d,
-        sprites: &[Sprite<'_>],
+        groups: &[Group<'_>],
     ) {
         queue.write_buffer(&self.target_uniforms_buffer, 0, &{
             let mut buffer = UniformBuffer::new(vec![]);
@@ -377,94 +306,90 @@ impl Renderer {
         let min_uniform_buffer_offset_alignment =
             device.limits().min_uniform_buffer_offset_alignment;
 
-        let grouped = sprites
-            .iter()
-            .chunk_by(|s| s.slice.texture)
-            .into_iter()
-            .map(|(_, chunk)| chunk.collect::<Vec<_>>())
-            .collect::<Vec<_>>();
-
         let mut texture_uniforms_buffer = DynamicUniformBuffer::new_with_alignment(
             vec![],
             min_uniform_buffer_offset_alignment as u64,
         );
-        for sprites in grouped.iter() {
-            let texture = sprites.first().unwrap().slice.texture;
 
+        for group in groups {
             texture_uniforms_buffer
                 .write(&TextureUniforms {
                     size: Vec3 {
-                        x: texture.width() as f32,
-                        y: texture.height() as f32,
+                        x: group.texture.width() as f32,
+                        y: group.texture.height() as f32,
                         z: 0.0,
                     },
-                    is_mask: (texture.format() == wgpu::TextureFormat::R8Unorm) as u32,
+                    is_mask: (group.texture.format() == wgpu::TextureFormat::R8Unorm) as u32,
                 })
                 .unwrap();
         }
+
         self.texture_uniforms_buffer
             .write(device, queue, &texture_uniforms_buffer.into_inner());
 
         let mut vertices = vec![];
         let mut indices = vec![];
 
-        for (i, sprites) in grouped.into_iter().enumerate() {
-            let texture = sprites.first().unwrap().slice.texture;
-
+        for (i, group) in groups.into_iter().enumerate() {
             let index_buffer_start = indices.len() as u32;
 
-            for s in sprites {
+            for item in group.items.iter() {
                 let offset = vertices.len() as u32;
 
                 let tint = [
-                    s.tint.r as f32 / 255.0,
-                    s.tint.g as f32 / 255.0,
-                    s.tint.b as f32 / 255.0,
-                    s.tint.a as f32 / 255.0,
+                    item.tint.r as f32 / 255.0,
+                    item.tint.g as f32 / 255.0,
+                    item.tint.b as f32 / 255.0,
+                    item.tint.a as f32 / 255.0,
                 ];
+
+                let left = item.src_offset.x;
+                let top = item.src_offset.y;
+                let right = item.src_offset.x + item.src_size.x as i32;
+                let bottom = item.src_offset.y + item.src_size.y as i32;
 
                 vertices.extend([
                     Vertex {
-                        position: s
+                        position: item
                             .transform
                             .transform_point2(Vec2::new(0.0, 0.0))
                             .extend(0.0)
                             .to_array(),
-                        tex_coords: [s.slice.rect.left() as f32, s.slice.rect.top() as f32],
-                        layer: s.slice.layer,
+                        tex_coords: [left as f32, top as f32],
+                        layer: item.src_layer,
                         tint,
                     },
                     Vertex {
-                        position: s
+                        position: item
                             .transform
-                            .transform_point2(Vec2::new(0.0, s.slice.rect.size.y as f32))
+                            .transform_point2(Vec2::new(0.0, item.src_size.y as f32))
                             .extend(0.0)
                             .to_array(),
-                        tex_coords: [s.slice.rect.left() as f32, s.slice.rect.bottom() as f32],
-                        layer: s.slice.layer,
+                        tex_coords: [left as f32, bottom as f32],
+                        layer: item.src_layer,
                         tint,
                     },
                     Vertex {
-                        position: s
+                        position: item
                             .transform
-                            .transform_point2(Vec2::new(s.slice.rect.size.x as f32, 0.0))
+                            .transform_point2(Vec2::new(item.src_size.x as f32, 0.0))
                             .extend(0.0)
                             .to_array(),
-                        tex_coords: [s.slice.rect.right() as f32, s.slice.rect.top() as f32],
-                        layer: s.slice.layer,
+                        tex_coords: [right as f32, top as f32],
+                        layer: item.src_layer,
                         tint,
                     },
                     Vertex {
-                        position: s
+                        position: item
                             .transform
                             .transform_point2(Vec2::new(
-                                s.slice.rect.size.x as f32,
-                                s.slice.rect.size.y as f32,
+                                item.src_size.x as f32,
+                                item.src_size.y as f32,
                             ))
                             .extend(0.0)
                             .to_array(),
-                        tex_coords: [s.slice.rect.right() as f32, s.slice.rect.bottom() as f32],
-                        layer: s.slice.layer,
+                        tex_coords: [right as f32, bottom as f32],
+                        layer: item.src_layer,
                         tint,
                     },
                 ]);
@@ -485,12 +410,12 @@ impl Renderer {
                     entries: &[
                         wgpu::BindGroupEntry {
                             binding: 0,
-                            resource: wgpu::BindingResource::TextureView(&texture.create_view(
-                                &wgpu::TextureViewDescriptor {
+                            resource: wgpu::BindingResource::TextureView(
+                                &group.texture.create_view(&wgpu::TextureViewDescriptor {
                                     dimension: Some(wgpu::TextureViewDimension::D2Array),
                                     ..Default::default()
-                                },
-                            )),
+                                }),
+                            ),
                         },
                         wgpu::BindGroupEntry {
                             binding: 1,

@@ -97,43 +97,50 @@ impl Inner {
             queue,
             target_size,
             &[
-                spright::Sprite {
-                    slice: spright::TextureSlice::from_layer(&self.texture1, 0)
-                        .unwrap()
-                        .slice(glam::ivec2(0, 0), glam::uvec2(280 / 2, 210 / 2))
-                        .unwrap(),
-                    transform: glam::Affine2::IDENTITY,
-                    tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
+                spright::Group {
+                    texture: &self.texture1,
+                    items: vec![
+                        spright::Item {
+                            src_offset: glam::ivec2(0, 0),
+                            src_size: glam::uvec2(280 / 2, 210 / 2),
+                            src_layer: 0,
+                            transform: glam::Affine2::IDENTITY,
+                            tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
+                        },
+                        spright::Item {
+                            src_offset: glam::ivec2(0, 0),
+                            src_size: glam::uvec2(280, 210),
+                            src_layer: 0,
+                            transform: glam::Affine2::from_translation(glam::vec2(100.0, 100.0)),
+                            tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
+                        },
+                    ],
                 },
-                spright::Sprite {
-                    slice: spright::TextureSlice::from_layer(&self.texture1, 0)
-                        .unwrap()
-                        .slice(glam::ivec2(0, 0), glam::uvec2(280, 210))
-                        .unwrap(),
-                    transform: glam::Affine2::from_translation(glam::vec2(100.0, 100.0)),
-                    tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
+                spright::Group {
+                    texture: &self.texture2,
+                    items: vec![spright::Item {
+                        src_offset: glam::ivec2(0, 0),
+                        src_size: glam::uvec2(386, 395),
+                        src_layer: 0,
+                        transform: glam::Affine2::from_scale(glam::Vec2::new(2.0, 3.0))
+                            * glam::Affine2::from_translation(glam::Vec2::new(200.0, 0.0)),
+                        tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
+                    }],
                 },
-                spright::Sprite {
-                    slice: spright::TextureSlice::from_layer(&self.texture2, 0)
-                        .unwrap()
-                        .slice(glam::ivec2(0, 0), glam::uvec2(386, 395))
-                        .unwrap(),
-                    transform: glam::Affine2::from_scale(glam::Vec2::new(2.0, 3.0))
-                        * glam::Affine2::from_translation(glam::Vec2::new(200.0, 0.0)),
-                    tint: spright::Color::new(0xff, 0xff, 0xff, 0xff),
-                },
-                spright::Sprite {
-                    slice: spright::TextureSlice::from_layer(&self.texture1, 0)
-                        .unwrap()
-                        .slice(glam::ivec2(0, 0), glam::uvec2(280, 210))
-                        .unwrap(),
-                    transform: glam::Affine2::from_translation(glam::Vec2::new(
-                        140.0 * 3.0,
-                        105.0 * 3.0,
-                    )) * glam::Affine2::from_angle(1.0)
-                        * glam::Affine2::from_scale(glam::Vec2::new(3.0, 3.0))
-                        * glam::Affine2::from_translation(glam::Vec2::new(-140.0, -105.0)),
-                    tint: spright::Color::new(0xff, 0xff, 0x00, 0x88),
+                spright::Group {
+                    texture: &self.texture1,
+                    items: vec![spright::Item {
+                        src_offset: glam::ivec2(0, 0),
+                        src_size: glam::uvec2(280, 210),
+                        src_layer: 0,
+                        transform: glam::Affine2::from_translation(glam::Vec2::new(
+                            140.0 * 3.0,
+                            105.0 * 3.0,
+                        )) * glam::Affine2::from_angle(1.0)
+                            * glam::Affine2::from_scale(glam::Vec2::new(3.0, 3.0))
+                            * glam::Affine2::from_translation(glam::Vec2::new(-140.0, -105.0)),
+                        tint: spright::Color::new(0xff, 0xff, 0x00, 0x88),
+                    }],
                 },
             ],
         );
