@@ -2,6 +2,7 @@ use glam::*;
 use itertools::Itertools as _;
 
 /// A single sprite.
+#[derive(Debug, Clone)]
 pub struct Sprite<'a> {
     /// Texture to draw with.
     pub texture: &'a wgpu::Texture,
