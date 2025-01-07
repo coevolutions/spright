@@ -1,6 +1,8 @@
 use encase::{DynamicUniformBuffer, ShaderSize, ShaderType, UniformBuffer};
 use glam::*;
 
+pub mod batch;
+
 pub type Color = rgb::RGBA8;
 
 /// Represents a group of sprites to draw from the same texture.
